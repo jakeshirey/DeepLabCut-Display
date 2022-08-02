@@ -193,8 +193,7 @@ class DataDisplay(qtw.QWidget):
     def video_position_changed(self, position):
 
         #convert from a video position in milliseconds to a frame number
-        proportion = position / float(self.video_duration)
-        frame = int(proportion * self.num_frames)
+        frame = round(position)
         self.current_frame = frame
 
         if self.plot.axes.lines:

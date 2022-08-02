@@ -1,11 +1,12 @@
-import sys
+import sys, time
 from xml.etree.ElementTree import tostring
 
 import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as qtg
 
-import videoplayer as vid
+import slideshow as vid
 import grapher
+import globalEventListener as listener
 
 class MainWindow(qtw.QWidget):
     def __init__(self):
@@ -32,18 +33,27 @@ class MainWindow(qtw.QWidget):
         self.setLayout(outerLayout)
 
         #supports syncronized scrubbing of graph alongside video
-        self.videoplayer.mediaPlayer.positionChanged.connect(self.graph.video_position_changed)
-        self.videoplayer.mediaPlayer.durationChanged.connect(self.graph.video_duration_changed)
+        self.videoplayer.slider.sliderMoved.connect(self.graph.video_position_changed)
+        #self.videoplayer.mediaPlayer.positionChanged.connect(self.graph.video_position_changed)
+        #self.videoplayer.mediaPlayer.durationChanged.connect(self.graph.video_duration_changed)
         #reverse connection - clicking on graph shifts video frame
         self.graph.plot.mpl_connect('button_press_event', self.videoplayer.click_graph)
         self.graph.plot.mpl_connect('motion_notify_event', self.videoplayer.move_mouse_graph)
 
         self.showMaximized()
 
+        listener.GlobalObject().add_event_listener('refresh', self.refresh)
+        listener.GlobalObject().dispatch_event('refresh')
+    
+    def refresh(self):
+        if self.videoplayer.isPlaying:
+            self.videoplayer.set_position(self.videoplayer.current_frame + 1)
+        # display in GUI
         self.update()
         self.show()
-    #def move_line(self, position):
-    #   self.graph.axes
+        # sleep according to frame rate then send another refresh signal
+        time.sleep(0.5)
+        listener.GlobalObject().dispatch_event('refresh')
 
 
 #Initialize
