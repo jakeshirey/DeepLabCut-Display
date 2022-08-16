@@ -12,4 +12,8 @@ This complimentary tool was originally developed for the University of Florida D
 # Installation
 Begin by downloading the codebase from this GitHub page either from the "download zip" option off the green "Code" button or by running this command:
 
-git clone https://github.com/jakeshirey/DeepLabCut-Display.git
+    git clone https://github.com/jakeshirey/DeepLabCut-Display.git
+
+After cloning the repository or downloading and extracting the zip folder, the required python libraries need to be downloaded. It is recommended to use a python virtual environment to manage the libraries.
+
+
