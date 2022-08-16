@@ -11,3 +11,5 @@ This complimentary tool was originally developed for the University of Florida D
 
 # Installation
 Begin by downloading the codebase from this GitHub page either from the "download zip" option off the green "Code" button or by running this command:
+
+git clone https://github.com/jakeshirey/DeepLabCut-Display.git
