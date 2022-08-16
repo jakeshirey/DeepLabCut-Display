@@ -1,4 +1,4 @@
-# Horse-Locomotion
+# DeepLabCut-Display
 A GUI for displaying landmark data from DeepLabCut Models for animal locomotion.
 
 This tool is meant to compliment the output of a DeepLabCut inference and allow a video with landmark annotations to be displayed with a plot of the coordinates of the landmark points. 
