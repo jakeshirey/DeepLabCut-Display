@@ -1,7 +1,5 @@
-from cProfile import label
-from cmath import inf
 import sys
-from xml.etree.ElementTree import tostring
+from cmath import inf
 
 import matplotlib
 matplotlib.use('Qt5Agg')

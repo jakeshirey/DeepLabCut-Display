@@ -1,6 +1,3 @@
-from multiprocessing.dummy import current_process
-from tkinter import HORIZONTAL
-from turtle import pos
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QSlider, QStyle, QSizePolicy, QFileDialog, QMessageBox
 import sys
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
