@@ -10,6 +10,13 @@ import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 
+#Matplotlib
+import matplotlib
+matplotlib.use('Qt5Agg')
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
+from matplotlib.axis import Axis
+
 #Files in same folder
 import grapher
 
@@ -35,6 +42,12 @@ class MainWindow(qtw.QWidget):
 
         self.update()
 '''
+class MplCanvas(FigureCanvasQTAgg):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super(MplCanvas, self).__init__(fig)
+
 class VideoPlayer(qtw.QWidget):
     def __init__(self):
         super().__init__()
@@ -56,7 +69,21 @@ class VideoPlayer(qtw.QWidget):
     
     def init_ui(self):
         #create image surface using Pixmap on Label
+        '''
         self.imageSurface = qtw.QLabel(self)
+        self.imageSurface.setScaledContents(True)
+        image_policy = qtw.QSizePolicy(qtw.QSizePolicy.Preferred, qtw.QSizePolicy.Preferred)
+        image_policy.setHeightForWidth(True)
+        self.imageSurface.setSizePolicy(image_policy)
+        '''
+        self.imageSurface = MplCanvas(self, width=5, height=4, dpi=100)
+
+        #create margins for the image surface to maintain aspect ratio
+        self.topMargin = qtw.QLabel()
+        self.bottomMargin = qtw.QLabel()
+        self.topMargin.setStyleSheet("background-color: black")
+        self.bottomMargin.setStyleSheet("background-color: black")
+        self.topMargin.setSizePolicy(qtw.QSizePolicy.Ignored, qtw.QSizePolicy.Ignored)
 
         #create open button
         openBtn = qtw.QPushButton('Open Video')
@@ -89,7 +116,9 @@ class VideoPlayer(qtw.QWidget):
 
         #create vbox layout
         mainLayout = qtw.QVBoxLayout()
+        mainLayout.addWidget(self.topMargin)
         mainLayout.addWidget(self.imageSurface)
+        mainLayout.addWidget(self.bottomMargin)
         mainLayout.addWidget(self.frameLabel)
         mainLayout.addWidget(self.slider)
         mainLayout.addLayout(hboxLayout)
@@ -106,13 +135,13 @@ class VideoPlayer(qtw.QWidget):
 
                 self.slider.setRange(0, len(self.frames) - 1)
 
-                self.imageSurface.setPixmap(self.frames[self.current_frame])
-                self.imageSurface.setScaledContents(True)
-                self.imageSurface.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
+                self.imageSurface.axes.imshow(self.frames[self.current_frame])
 
                 self.playBtn.setEnabled(True)
-        except:
-                show_warning_messagebox()
+                self.set_position(0)
+        except Exception as e:
+                show_warning_messagebox("Error occured when opening video. Please check format of file.")
+                print(str(e))
     
     def extract_frames(self, path):
 
@@ -132,8 +161,8 @@ class VideoPlayer(qtw.QWidget):
             success, image = vidObj.read()
 
             if success:
-                image = qtg.QImage(image.data, image.shape[1], image.shape[0], qtg.QImage.Format_RGB888).rgbSwapped()
-                image = qtg.QPixmap.fromImage(image)
+                #image = qtg.QImage(image.data, image.shape[1], image.shape[0], qtg.QImage.Format_RGB888).rgbSwapped()
+                #image = qtg.QPixmap.fromImage(image)
                 #image = image.scaled(720, 720, qtc.Qt.KeepAspectRatio)
                 self.frames.append(image)
     
@@ -152,10 +181,11 @@ class VideoPlayer(qtw.QWidget):
             self.playBtn.setIcon(self.style().standardIcon(qtw.QStyle.SP_MediaPause))
 
     def set_position(self, position):
-        self.imageSurface.setPixmap(self.frames[position])
+        self.imageSurface.axes.imshow(self.frames[position])
         self.current_frame = position
         currFrameString = self.frameLabelString.format(position, len(self.frames) - 1)
         self.frameLabel.setText(currFrameString)
+        self.slider.setSliderPosition(position)
 
     #GRAPH INTERACTIVITY===============
     def set_graph_reference(self, graph: grapher.DataDisplay):
@@ -177,12 +207,12 @@ class VideoPlayer(qtw.QWidget):
             self.slider.setValue(position)
 
 
-def show_warning_messagebox():
+def show_warning_messagebox(message):
     msg = qtw.QMessageBox()
     msg.setIcon(qtw.QMessageBox.Warning)
 
     # setting message for Message Box
-    msg.setText("Exception thrown when opening video. Please check format of video.")
+    msg.setText(message)
   
     # setting Message box window title
     msg.setWindowTitle("Warning")
