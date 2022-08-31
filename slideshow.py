@@ -1,9 +1,10 @@
 #Standard Library
-from ast import main
 import sys
 import glob
 import os
 import cv2
+
+#Numpy
 import numpy as np
 
 #PyQt5
@@ -81,7 +82,7 @@ class VideoPlayer(qtw.QWidget):
         self.imageSurface.setSizePolicy(image_policy)
 
         pal = self.palette()
-        pal.setColor(qtg.QPalette.Background, qtc.Qt.black)
+        pal.setColor(qtg.QPalette.Background, qtc.Qt.white)
         self.setAutoFillBackground(True)
         self.setPalette(pal)
 
@@ -89,14 +90,14 @@ class VideoPlayer(qtw.QWidget):
 
 
         #create margins for the image surface to maintain aspect ratio
-        '''
+        
         self.topMargin = qtw.QLabel()
         self.bottomMargin = qtw.QLabel()
         self.topMargin.setStyleSheet("background-color: black")
         self.bottomMargin.setStyleSheet("background-color: black")
         self.topMargin.setSizePolicy(qtw.QSizePolicy.Ignored, qtw.QSizePolicy.Ignored)
         self.bottomMargin.setSizePolicy(qtw.QSizePolicy.Ignored, qtw.QSizePolicy.Ignored)
-        '''
+        
 
         #create open button
         openBtn = qtw.QPushButton('Open Video')
@@ -134,9 +135,9 @@ class VideoPlayer(qtw.QWidget):
 
         #create vbox layout
         mainLayout = qtw.QVBoxLayout()
-        #mainLayout.addWidget(self.topMargin)
+        mainLayout.addWidget(self.topMargin)
         mainLayout.addWidget(self.imageSurface)
-        #mainLayout.addWidget(self.bottomMargin)
+        mainLayout.addWidget(self.bottomMargin)
         mainLayout.addWidget(self.frameLabel)
         mainLayout.addWidget(self.slider)
         mainLayout.addLayout(hboxLayout)
@@ -171,6 +172,7 @@ class VideoPlayer(qtw.QWidget):
             filename, _ = qtw.QFileDialog.getOpenFileName(self, "Open Video")
 
             if filename:
+                self.frames.clear()
                 self.extract_frames(filename)
 
                 self.slider.setRange(0, len(self.frames) - 1)
@@ -181,7 +183,7 @@ class VideoPlayer(qtw.QWidget):
                 self.resizeEvent()
                 #self.imageSurface.axes.imshow(self.frames[self.current_frame])
 
-                self.playBtn.setEnabled(True)
+                self.playBtn.setEnabled(False)
                 self.set_position(0)
         except Exception as e:
                 show_warning_messagebox("Error occured when opening video. Please check format of file.")
