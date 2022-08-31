@@ -3,6 +3,7 @@ from xml.etree.ElementTree import tostring
 
 import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as qtg
+import PyQt5.QtCore as qtc
 
 import slideshow as vid
 import grapher
@@ -31,6 +32,7 @@ class MainWindow(qtw.QWidget):
         splitter = qtw.QSplitter()
         splitter.addWidget(self.videoplayer)
         splitter.addWidget(self.graph)
+        #splitter.splitterMoved.connect(self.dynamic_scaling)
 
         outerLayout = qtw.QVBoxLayout()
         outerLayout.addWidget(splitter)
