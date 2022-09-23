@@ -14,9 +14,6 @@ Begin by downloading the codebase from this GitHub page either from the "downloa
 
     git clone https://github.com/jakeshirey/DeepLabCut-Display.git
 
-Switch to the OpenCV-based branch by using:
-
-    git checkout opencv
 
 After cloning the repository or downloading and extracting the zip folder, the required python libraries need to be downloaded. ***It is recommended to use a python virtual environment to manage the libraries.*** A reference for creating virtual environments can be found here: (https://docs.python.org/3/tutorial/venv.html)
 
