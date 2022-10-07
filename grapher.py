@@ -4,6 +4,7 @@ import sys
 from xml.etree.ElementTree import tostring
 
 import matplotlib
+import matplotlib.pyplot as plt
 matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -15,13 +16,12 @@ import string
 
 import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as qtg
-
+import PyQt5.QtCore as qtc
 
 class MplCanvas(FigureCanvasQTAgg):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super(MplCanvas, self).__init__(fig)
+    def __init__(self):
+        self.fig, self.axes = plt.subplots(2, 1, constrained_layout = True)
+        super(MplCanvas, self).__init__(self.fig)
 
 class DataDisplay(qtw.QWidget):
     def __init__(self):
@@ -48,13 +48,16 @@ class DataDisplay(qtw.QWidget):
         self.openBtn = qtw.QPushButton('Open CSV Data')
         self.openBtn.clicked.connect(self.open_file)
         
-        # Create the maptlotlib FigureCanvas object,
-        self.plot = MplCanvas(self, width=5, height=4, dpi=100)
-        self.plot.setMinimumSize(480, 270)
+        # Create the maptlotlib FigureCanvas object
+        self.plot = MplCanvas()
+        self.plot.axes[0].set_title('X Coordinate by Frame')
+        self.plot.axes[1].set_title('Y Coordinate by Frame')
+        #self.plot.setMinimumSize(480, 270)
         self.plot.mpl_connect('button_press_event', self.click_graph)
         self.plot.mpl_connect('scroll_event', self.zoom)
         self.plot.mpl_connect('button_release_event', self.release_graph)
         self.plot.mpl_connect('motion_notify_event', self.move_mouse)
+
 
         #create a listWidget to control plotted variables
         self.listWidget = qtw.QListWidget()
@@ -92,50 +95,76 @@ class DataDisplay(qtw.QWidget):
 
                 #this regex line raises a FutureWarning and could break in later versions of PyQt
                 self.data_frame.columns = self.data_frame.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '')
+                #create a list of the bodyparts add to the list widget: only add one for each triplet of x,y, likelihood
+                bodypart_list = []
                 for col in self.data_frame.columns:
                     #convert dtype from object to float64
                     self.data_frame[col] = pd.to_numeric(self.data_frame[col],errors = 'coerce')
                     #add column label to listWidget
-                    item = qtw.QListWidgetItem(str(col))
-                    self.listWidget.addItem(item)
+                    bodyparts_label = str(col).split('_')[0]
+                    if bodyparts_label not in bodypart_list:
+                        bodypart_list.append(bodyparts_label)
+                        item = qtw.QListWidgetItem(bodyparts_label)
+                        self.listWidget.addItem(item)
                 
                 self.num_frames = len(self.data_frame.index)
                 self.plot.axes.cla()
-                self.plot.axes.plot(self.data_frame.iloc[:,0], self.data_frame.iloc[:,0], label = self.data_frame.columns[0])
-                self.plot.axes.set_xlabel('Frame Number')
-                self.plot.axes.set_ylabel('Pixel Coordinate')
+                #self.plot.axes.plot(self.data_frame.iloc[:,0], self.data_frame.iloc[:,0], label = self.data_frame.columns[0])
+                self.plot.axes[0].set_xlabel('Frame Number')
+                self.plot.axes[0].set_ylabel('Pixel Coordinate (X)')
+                self.plot.axes[1].set_xlabel('Frame Number')
+                self.plot.axes[1].set_ylabel('Pixel Coordinate (Y)')
                 self.plot.axes.legend()
                 self.plot.axes.margins(x = 0)
-                self.plot.axes.axvline(x = 0, color = 'r', label = 'current frame')
+                self.plot.axes[0].axvline(x = 0, color = 'r', label = 'current frame')
+                self.plot.axes[1].axvline(x = 0, color = 'r', label = 'current frame')
 
                 self.plot.draw_idle()
-            except:
-                show_warning_messagebox()
+            except Exception as e:
+                show_warning_messagebox("Exception thrown when reading CSV data. Please check format of data.")
+                print(str(e))
     
     #switch the data plotted on the graph
     def change_plotted_data(self):
-        while self.plot.axes.lines:
-            self.plot.axes.lines.pop()
+        while self.plot.axes[0].lines:
+            self.plot.axes[1].lines.pop()
+        while self.plot.axes[1].lines:
+            self.plot.axes[1].lines.pop()    
         
         items = self.listWidget.selectedItems()
         #grab max/min y to set plot bounds
-        miny, maxy = 0, 1 #initialized for case of empty plot
+        minx, maxx, miny, maxy = 0, 1, 0, 1 #initialized for case of empty plot
         if items:
+            minx = inf
+            maxx = -inf
             miny = inf
             maxy = -inf
 
         for i in items:
-            self.plot.axes.plot(self.data_frame.loc[:,'frame_number'], self.data_frame.loc[:, i.text()], label = i.text())
-            if (miny > min(self.data_frame.loc[:, i.text()])):
-                miny = min(self.data_frame.loc[:, i.text()])
-            if (maxy < max(self.data_frame.loc[:, i.text()])):
-                maxy = max(self.data_frame.loc[:, i.text()])
+            x_label = i.text() + "_x"
+            y_label = i.text() + "_y"
+            self.plot.axes[0].plot(self.data_frame.loc[:,'frame_number'], self.data_frame.loc[:, x_label], label = i.text())
+            self.plot.axes[1].plot(self.data_frame.loc[:,'frame_number'], self.data_frame.loc[:, y_label], label = i.text())
+
+            if (miny > min(self.data_frame.loc[:, x_label])):
+                miny = min(self.data_frame.loc[:, x_label])
+            if (maxy < max(self.data_frame.loc[:, x_label])):
+                maxy = max(self.data_frame.loc[:, x_label])
+            if (miny > min(self.data_frame.loc[:, y_label])):
+                miny = min(self.data_frame.loc[:, y_label])
+            if (maxy < max(self.data_frame.loc[:, y_label])):
+                maxy = max(self.data_frame.loc[:, y_label])
         
-        self.plot.axes.axvline(x = self.current_frame, color = 'r', label = 'current frame')
-        self.plot.axes.legend()
-        #reset y axis range
+        self.plot.axes[0].axvline(x = self.current_frame, color = 'r', label = 'current frame')
+        self.plot.axes[1].axvline(x = self.current_frame, color = 'r', label = 'current frame')
+
+        self.plot.axes[0].legend()
+        self.plot.axes[1].legend()
+        #reset vertical axis range
+        dx = (maxx - minx)*0.1
         dy = (maxy - miny)*0.1
-        self.plot.axes.set_ylim(miny-dy, maxy+dy)
+        #self.plot.axes[0].set_ylim(minx-dx, maxx+dx)
+        #self.plot.axes[1].set_ylim(miny-dy, maxy+dy)
 
         self.plot.draw_idle()
 
@@ -205,12 +234,12 @@ class DataDisplay(qtw.QWidget):
     def video_duration_changed(self, duration):
         self.video_duration = duration
 
-def show_warning_messagebox():
+def show_warning_messagebox(message):
     msg = qtw.QMessageBox()
     msg.setIcon(qtw.QMessageBox.Warning)
   
     # setting message for Message Box
-    msg.setText("Exception thrown when reading CSV data. Please check format of data.")
+    msg.setText(message)
       
     # setting Message box window title
     msg.setWindowTitle("Warning")

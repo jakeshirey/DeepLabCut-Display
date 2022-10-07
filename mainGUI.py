@@ -46,6 +46,7 @@ class MainWindow(qtw.QWidget):
         self.graph.plot.mpl_connect('button_press_event', self.videoplayer.click_graph)
         self.graph.plot.mpl_connect('motion_notify_event', self.videoplayer.move_mouse_graph)
 
+
         self.showMaximized()
 
         #listener.GlobalObject().add_event_listener('refresh', self.refresh)
