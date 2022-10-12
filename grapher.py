@@ -47,6 +47,10 @@ class DataDisplay(qtw.QWidget):
         #create open-file button
         self.openBtn = qtw.QPushButton('Open CSV Data')
         self.openBtn.clicked.connect(self.open_file)
+
+        #create toggle points by threshold button
+        self.thresholdBtn = qtw.QPushButton('Set Likelihood Threshold')
+        self.thresholdBtn.clicked.connect(self.set_likelihood_threshold)
         
         # Create the maptlotlib FigureCanvas object
         self.plot = MplCanvas()
@@ -69,8 +73,11 @@ class DataDisplay(qtw.QWidget):
         #add widgets to layout
         graphLayout = qtw.QHBoxLayout()
         plotLayout = qtw.QVBoxLayout()
+        buttonLayout = qtw.QHBoxLayout()
         plotLayout.addWidget(self.plot)
-        plotLayout.addWidget(self.openBtn)
+        buttonLayout.addWidget(self.openBtn)
+        buttonLayout.addWidget(self.thresholdBtn)
+        plotLayout.addLayout(buttonLayout)
         graphLayout.addLayout(plotLayout)
         graphLayout.addWidget(self.listWidget)
         self.setLayout(graphLayout)
@@ -225,6 +232,10 @@ class DataDisplay(qtw.QWidget):
         #self.graph.axes.set_ylim([ydata - cur_yrange*scale_factor,
                      #ydata + cur_yrange*scale_factor])
         self.plot.draw_idle()
+
+    #========DATA MANIPULATION===========
+    def set_likelihood_threshold(self):
+        pass
 
     #========VIDEO FUNCTIONALITY=========
     #Slide a vertical line along the graph as the video frame changes
