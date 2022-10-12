@@ -244,15 +244,17 @@ class VideoPlayer(qtw.QWidget):
         self.graph_reference = graph
 
     def click_graph(self, event):
-        if event.inaxes != self.graph_reference.plot.axes: return
-        
-        position = round(event.xdata)
-        self.set_position(position)
-        self.slider.setValue(position)
+        if all(event.inaxes != ax for ax in self.graph_reference.plot.axes): return
+        if self.graph_reference.plot.axes[0].lines and self.graph_reference.plot.axes[1].lines:
+            position = round(event.xdata)
+            self.set_position(position)
+            self.slider.setValue(position)
+            self.mouse_hold = True
+            #print("grapher_click_graph")
     
     def move_mouse_graph(self, event):
         if self.graph_reference.mouse_hold:
-            if event.inaxes != self.graph_reference.plot.axes: return
+            if all(event.inaxes != ax for ax in self.graph_reference.plot.axes): return
         
             position = round(event.xdata)
             self.set_position(position)

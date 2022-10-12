@@ -108,26 +108,29 @@ class DataDisplay(qtw.QWidget):
                         self.listWidget.addItem(item)
                 
                 self.num_frames = len(self.data_frame.index)
-                self.plot.axes.cla()
+                self.plot.axes[0].clear()
+                self.plot.axes[1].clear()
                 #self.plot.axes.plot(self.data_frame.iloc[:,0], self.data_frame.iloc[:,0], label = self.data_frame.columns[0])
                 self.plot.axes[0].set_xlabel('Frame Number')
                 self.plot.axes[0].set_ylabel('Pixel Coordinate (X)')
                 self.plot.axes[1].set_xlabel('Frame Number')
                 self.plot.axes[1].set_ylabel('Pixel Coordinate (Y)')
-                self.plot.axes.legend()
-                self.plot.axes.margins(x = 0)
+                self.plot.axes[0].margins(x=0, y=0)
+                self.plot.axes[1].margins(x=0, y=0)
+                self.plot.axes[0].legend()
+                self.plot.axes[1].legend()
                 self.plot.axes[0].axvline(x = 0, color = 'r', label = 'current frame')
                 self.plot.axes[1].axvline(x = 0, color = 'r', label = 'current frame')
 
                 self.plot.draw_idle()
             except Exception as e:
-                show_warning_messagebox("Exception thrown when reading CSV data. Please check format of data.")
+                show_warning_messagebox(str(e))
                 print(str(e))
     
     #switch the data plotted on the graph
     def change_plotted_data(self):
         while self.plot.axes[0].lines:
-            self.plot.axes[1].lines.pop()
+            self.plot.axes[0].lines.pop()
         while self.plot.axes[1].lines:
             self.plot.axes[1].lines.pop()    
         
@@ -146,10 +149,10 @@ class DataDisplay(qtw.QWidget):
             self.plot.axes[0].plot(self.data_frame.loc[:,'frame_number'], self.data_frame.loc[:, x_label], label = i.text())
             self.plot.axes[1].plot(self.data_frame.loc[:,'frame_number'], self.data_frame.loc[:, y_label], label = i.text())
 
-            if (miny > min(self.data_frame.loc[:, x_label])):
-                miny = min(self.data_frame.loc[:, x_label])
-            if (maxy < max(self.data_frame.loc[:, x_label])):
-                maxy = max(self.data_frame.loc[:, x_label])
+            if (minx > min(self.data_frame.loc[:, x_label])):
+                minx = min(self.data_frame.loc[:, x_label])
+            if (maxx < max(self.data_frame.loc[:, x_label])):
+                maxx = max(self.data_frame.loc[:, x_label])
             if (miny > min(self.data_frame.loc[:, y_label])):
                 miny = min(self.data_frame.loc[:, y_label])
             if (maxy < max(self.data_frame.loc[:, y_label])):
@@ -163,19 +166,21 @@ class DataDisplay(qtw.QWidget):
         #reset vertical axis range
         dx = (maxx - minx)*0.1
         dy = (maxy - miny)*0.1
-        #self.plot.axes[0].set_ylim(minx-dx, maxx+dx)
-        #self.plot.axes[1].set_ylim(miny-dy, maxy+dy)
+        self.plot.axes[0].set_ylim(minx-dx, maxx+dx)
+        self.plot.axes[1].set_ylim(miny-dy, maxy+dy)
 
         self.plot.draw_idle()
 
     #=======GRAPH INTERACTIVITY========
     def click_graph(self, event):
         self.mouse_hold = True
-        if event.inaxes != self.plot.axes: return
-        if self.plot.axes.lines:
-            self.plot.axes.lines.pop()
+        if all(event.inaxes != ax for ax in self.plot.axes): return
+        if self.plot.axes[0].lines and self.plot.axes[1].lines:
+            self.plot.axes[0].lines.pop()
+            self.plot.axes[1].lines.pop()
             self.current_frame = int(event.xdata)
-            self.plot.axes.axvline(x = self.current_frame, color = 'r', label = 'current frame')
+            self.plot.axes[0].axvline(x = self.current_frame, color = 'r', label = 'current frame')
+            self.plot.axes[1].axvline(x = self.current_frame, color = 'r', label = 'current frame')
             self.plot.draw_idle()
             #print("grapher_click_graph")
     
@@ -184,15 +189,18 @@ class DataDisplay(qtw.QWidget):
     
     def move_mouse(self, event):
         if self.mouse_hold:
-            if event.inaxes != self.plot.axes: return
-            if self.plot.axes.lines:
-                self.plot.axes.lines.pop()
+            if all(event.inaxes != ax for ax in self.plot.axes): return
+            if self.plot.axes[0].lines and self.plot.axes[1].lines:
+                self.plot.axes[0].lines.pop()
+                self.plot.axes[1].lines.pop()
                 self.current_frame = int(event.xdata)
-                self.plot.axes.axvline(x = self.current_frame, color = 'r', label = 'current frame')
+                self.plot.axes[0].axvline(x = self.current_frame, color = 'r', label = 'current frame')
+                self.plot.axes[1].axvline(x = self.current_frame, color = 'r', label = 'current frame')
                 self.plot.draw_idle()
+                #print("grapher_click_graph")
 
     def zoom(self, event):
-        cur_xlim = self.plot.axes.get_xlim()
+        cur_xlim = self.plot.axes[0].get_xlim()
         #cur_ylim = self.graph.axes.get_ylim()
         cur_xrange = (cur_xlim[1] - cur_xlim[0])*.5
         #cur_yrange = (cur_ylim[1] - cur_ylim[0])*.5
@@ -212,7 +220,8 @@ class DataDisplay(qtw.QWidget):
         xmax = xdata + cur_xrange*scale_factor
         if xmin < 0: xmin = 0
         if xmax > self.num_frames: xmax = self.num_frames
-        self.plot.axes.set_xlim([xmin, xmax])
+        self.plot.axes[0].set_xlim([xmin, xmax])
+        self.plot.axes[1].set_xlim([xmin, xmax])
         #self.graph.axes.set_ylim([ydata - cur_yrange*scale_factor,
                      #ydata + cur_yrange*scale_factor])
         self.plot.draw_idle()
@@ -225,14 +234,17 @@ class DataDisplay(qtw.QWidget):
         frame = round(position)
         self.current_frame = frame
 
-        if self.plot.axes.lines:
-            self.plot.axes.lines.pop()
-            self.plot.axes.axvline(x = self.current_frame, color = 'r', label = 'current frame')
+        if self.plot.axes[0].lines and self.plot.axes[1].lines:
+            self.plot.axes[0].lines.pop()
+            self.plot.axes[1].lines.pop()
+            self.plot.axes[0].axvline(x = self.current_frame, color = 'r', label = 'current frame')
+            self.plot.axes[1].axvline(x = self.current_frame, color = 'r', label = 'current frame')
             self.plot.draw_idle()
 
     #Store the duration of video in graph object, supports vertical line scrubbing function.
     def video_duration_changed(self, duration):
         self.video_duration = duration
+#end of class==============
 
 def show_warning_messagebox(message):
     msg = qtw.QMessageBox()
