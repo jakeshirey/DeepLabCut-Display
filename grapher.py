@@ -31,7 +31,7 @@ class DataDisplay(qtw.QWidget):
         self.num_frames = 0
         self.current_frame = 0 #stores current frame for vertical line plotting
         self.video_duration = 1 #prevents a divide by zero error when video_position_changed initially executes
-
+        self.threshold = 0 #likelihood threshold for filtering points, by default set to 0 (all points meet threshold)
         #create an empty data frame using pandas API
         self.data_frame = pd.DataFrame()
 
@@ -153,6 +153,9 @@ class DataDisplay(qtw.QWidget):
         for i in items:
             x_label = i.text() + "_x"
             y_label = i.text() + "_y"
+
+            #update this function to incorporate threshold member variable when plotting
+
             self.plot.axes[0].plot(self.data_frame.loc[:,'frame_number'], self.data_frame.loc[:, x_label], label = i.text())
             self.plot.axes[1].plot(self.data_frame.loc[:,'frame_number'], self.data_frame.loc[:, y_label], label = i.text())
 
@@ -235,7 +238,11 @@ class DataDisplay(qtw.QWidget):
 
     #========DATA MANIPULATION===========
     def set_likelihood_threshold(self):
-        pass
+        self.threshold, done = qtw.QInputDialog.getDouble(self,
+         "Threshold Dialog",
+          "Enter a likelihood value between 0-1. Graph will only display points above this threshold.",
+          value=0, min=0, max=1, decimals=3)
+        
 
     #========VIDEO FUNCTIONALITY=========
     #Slide a vertical line along the graph as the video frame changes
