@@ -1,6 +1,8 @@
 from cProfile import label
 from cmath import inf
 import sys
+from tkinter import Y
+from turtle import color
 from xml.etree.ElementTree import tostring
 
 import matplotlib
@@ -10,6 +12,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.axis import Axis
 
+import numpy as np
 import pandas as pd
 import csv
 import string
@@ -155,18 +158,31 @@ class DataDisplay(qtw.QWidget):
             y_label = i.text() + "_y"
 
             #update this function to incorporate threshold member variable when plotting
+            x_data = self.data_frame.loc[:, x_label]
+            y_data = self.data_frame.loc[:, y_label]
+            likelihood_data = self.data_frame.loc[:, i.text() + "_likelihood"]
+            x_data = x_data.to_numpy()
+            y_data = y_data.to_numpy()
+            likelihood_data = likelihood_data.to_numpy()
+            x_data = np.ma.masked_where(likelihood_data < self.threshold, x_data)
+            y_data = np.ma.masked_where(likelihood_data < self.threshold, y_data)
 
-            self.plot.axes[0].plot(self.data_frame.loc[:,'frame_number'], self.data_frame.loc[:, x_label], label = i.text())
-            self.plot.axes[1].plot(self.data_frame.loc[:,'frame_number'], self.data_frame.loc[:, y_label], label = i.text())
+            cmap = matplotlib.colormaps['plasma']
+            colored = [cmap(tl) for tl in likelihood_data]
 
-            if (minx > min(self.data_frame.loc[:, x_label])):
-                minx = min(self.data_frame.loc[:, x_label])
-            if (maxx < max(self.data_frame.loc[:, x_label])):
-                maxx = max(self.data_frame.loc[:, x_label])
-            if (miny > min(self.data_frame.loc[:, y_label])):
-                miny = min(self.data_frame.loc[:, y_label])
-            if (maxy < max(self.data_frame.loc[:, y_label])):
-                maxy = max(self.data_frame.loc[:, y_label])
+
+            self.plot.axes[0].scatter(range(len(x_data)), x_data, label = i.text(), marker='.', color=colored)
+            self.plot.axes[1].scatter(range(len(y_data)), y_data, label = i.text(), marker='.', color=colored)
+
+            #catch runtime warning when all nans (from threshold == 1)
+            if (minx > np.nanmin(x_data)):
+                minx = np.nanmin(x_data)
+            if (maxx < np.nanmax(x_data)):
+                maxx = np.nanmax(x_data)
+            if (miny > np.nanmin(y_data)):
+                miny = np.nanmin(y_data)
+            if (maxy < np.nanmax(y_data)):
+                maxy = np.nanmax(y_data)
         
         self.plot.axes[0].axvline(x = self.current_frame, color = 'r', label = 'current frame')
         self.plot.axes[1].axvline(x = self.current_frame, color = 'r', label = 'current frame')
@@ -242,6 +258,7 @@ class DataDisplay(qtw.QWidget):
          "Threshold Dialog",
           "Enter a likelihood value between 0-1. Graph will only display points above this threshold.",
           value=0, min=0, max=1, decimals=3)
+        self.change_plotted_data()
         
 
     #========VIDEO FUNCTIONALITY=========
