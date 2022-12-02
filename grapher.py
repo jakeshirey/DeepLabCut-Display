@@ -34,7 +34,9 @@ class DataDisplay(qtw.QWidget):
         self.num_frames = 0
         self.current_frame = 0 #stores current frame for vertical line plotting
         self.video_duration = 1 #prevents a divide by zero error when video_position_changed initially executes
+        self.bodypart_list = [] #stores the names of all the unique body parts in string
         self.threshold = 0 #likelihood threshold for filtering points, by default set to 0 (all points meet threshold)
+
         #create an empty data frame using pandas API
         self.data_frame = pd.DataFrame()
 
@@ -54,6 +56,10 @@ class DataDisplay(qtw.QWidget):
         #create toggle points by threshold button
         self.thresholdBtn = qtw.QPushButton('Set Likelihood Threshold')
         self.thresholdBtn.clicked.connect(self.set_likelihood_threshold)
+
+        #create save data button
+        self.saveBtn = qtw.QPushButton('Save Data')
+        self.saveBtn.clicked.connect(self.save_filtered_data)
         
         # Create the maptlotlib FigureCanvas object
         self.plot = MplCanvas()
@@ -80,6 +86,7 @@ class DataDisplay(qtw.QWidget):
         plotLayout.addWidget(self.plot)
         buttonLayout.addWidget(self.openBtn)
         buttonLayout.addWidget(self.thresholdBtn)
+        buttonLayout.addWidget(self.saveBtn)
         plotLayout.addLayout(buttonLayout)
         graphLayout.addLayout(plotLayout)
         graphLayout.addWidget(self.listWidget)
@@ -106,14 +113,14 @@ class DataDisplay(qtw.QWidget):
                 #this regex line raises a FutureWarning and could break in later versions of PyQt
                 self.data_frame.columns = self.data_frame.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '')
                 #create a list of the bodyparts add to the list widget: only add one for each triplet of x,y, likelihood
-                bodypart_list = []
+                self.bodypart_list.clear()
                 for col in self.data_frame.columns:
                     #convert dtype from object to float64
                     self.data_frame[col] = pd.to_numeric(self.data_frame[col],errors = 'coerce')
                     #add column label to listWidget
                     bodyparts_label = str(col).split('_')[0]
-                    if bodyparts_label not in bodypart_list:
-                        bodypart_list.append(bodyparts_label)
+                    if bodyparts_label not in self.bodypart_list:
+                        self.bodypart_list.append(bodyparts_label)
                         item = qtw.QListWidgetItem(bodyparts_label)
                         self.listWidget.addItem(item)
                 
@@ -136,6 +143,43 @@ class DataDisplay(qtw.QWidget):
             except Exception as e:
                 show_warning_messagebox(str(e))
                 print(str(e))
+
+    #save the data w/ current threshold to file
+    def save_filtered_data(self):
+        save_path, _ = qtw.QFileDialog.getSaveFileName(self, "Save Filtered Data Points to File")
+        self.bodypart_list.remove("frame")      #quick and dirty 
+
+        data = []
+        columns = []
+        for body_part in self.bodypart_list:
+            x_data = self.data_frame.loc[:, body_part + "_x"]
+            y_data = self.data_frame.loc[:, body_part + "_y"]
+            likelihood_data = self.data_frame.loc[:, body_part + "_likelihood"]
+            
+            x_data = x_data.to_numpy()
+            y_data = y_data.to_numpy()
+            likelihood_data = likelihood_data.to_numpy()
+
+            x_data = np.ma.masked_where(likelihood_data < self.threshold, x_data)
+            y_data = np.ma.masked_where(likelihood_data < self.threshold, y_data)
+
+            x_data = np.ma.filled(x_data, np.nan)
+            y_data = np.ma.filled(x_data, np.nan)
+
+            columns.append(body_part+"_x")
+            columns.append(body_part+"_y")
+            columns.append(body_part+"_likelihood")
+
+            data.append(x_data)
+            data.append(y_data)
+            data.append(likelihood_data)
+        data = np.swapaxes(data, 0, 1)      
+        df = pd.DataFrame(data=data, columns=columns)
+        df.to_csv(save_path)
+            
+        
+
+
     
     #switch the data plotted on the graph
     def change_plotted_data(self):
@@ -167,12 +211,12 @@ class DataDisplay(qtw.QWidget):
             x_data = np.ma.masked_where(likelihood_data < self.threshold, x_data)
             y_data = np.ma.masked_where(likelihood_data < self.threshold, y_data)
 
-            cmap = matplotlib.colormaps['plasma']
-            colored = [cmap(tl) for tl in likelihood_data]
+            #cmap = matplotlib.colormaps['plasma']
+            #colored = [cmap(tl) for tl in likelihood_data]
 
 
-            self.plot.axes[0].scatter(range(len(x_data)), x_data, label = i.text(), marker='.', color=colored)
-            self.plot.axes[1].scatter(range(len(y_data)), y_data, label = i.text(), marker='.', color=colored)
+            self.plot.axes[0].plot(range(len(x_data)), x_data, label = i.text(), marker='.')
+            self.plot.axes[1].plot(range(len(y_data)), y_data, label = i.text(), marker='.')
 
             #catch runtime warning when all nans (from threshold == 1)
             if (minx > np.nanmin(x_data)):
