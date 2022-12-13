@@ -1,6 +1,8 @@
 from cProfile import label
 from cmath import inf
 import sys
+from tkinter import Y
+from turtle import color
 from xml.etree.ElementTree import tostring
 
 import matplotlib
@@ -10,6 +12,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.axis import Axis
 
+import numpy as np
 import pandas as pd
 import csv
 import string
@@ -31,6 +34,8 @@ class DataDisplay(qtw.QWidget):
         self.num_frames = 0
         self.current_frame = 0 #stores current frame for vertical line plotting
         self.video_duration = 1 #prevents a divide by zero error when video_position_changed initially executes
+        self.bodypart_list = [] #stores the names of all the unique body parts in string
+        self.threshold = 0 #likelihood threshold for filtering points, by default set to 0 (all points meet threshold)
 
         #create an empty data frame using pandas API
         self.data_frame = pd.DataFrame()
@@ -39,14 +44,18 @@ class DataDisplay(qtw.QWidget):
         self.show()
 
     def init_ui(self):
-        #create a label for the graph
-        self.graph_label = qtw.QLabel("Ankle Position by Time")
-        self.graph_label.setFont(qtg.QFont(''))
-        self.graph_label.setFixedHeight(50)
 
         #create open-file button
         self.openBtn = qtw.QPushButton('Open CSV Data')
         self.openBtn.clicked.connect(self.open_file)
+
+        #create toggle points by threshold button
+        self.thresholdBtn = qtw.QPushButton('Set Likelihood Threshold')
+        self.thresholdBtn.clicked.connect(self.set_likelihood_threshold)
+
+        #create save data button
+        self.saveBtn = qtw.QPushButton('Save Data')
+        self.saveBtn.clicked.connect(self.save_filtered_data)
         
         # Create the maptlotlib FigureCanvas object
         self.plot = MplCanvas()
@@ -69,8 +78,12 @@ class DataDisplay(qtw.QWidget):
         #add widgets to layout
         graphLayout = qtw.QHBoxLayout()
         plotLayout = qtw.QVBoxLayout()
+        buttonLayout = qtw.QHBoxLayout()
         plotLayout.addWidget(self.plot)
-        plotLayout.addWidget(self.openBtn)
+        buttonLayout.addWidget(self.openBtn)
+        buttonLayout.addWidget(self.thresholdBtn)
+        buttonLayout.addWidget(self.saveBtn)
+        plotLayout.addLayout(buttonLayout)
         graphLayout.addLayout(plotLayout)
         graphLayout.addWidget(self.listWidget)
         self.setLayout(graphLayout)
@@ -84,6 +97,7 @@ class DataDisplay(qtw.QWidget):
             try:
                 #load data into pandas dataframe
                 self.data_frame = pd.read_csv(filename)
+
                 #clean data by combining labels and reindexing
                 bodyparts_labels = self.data_frame.loc[0]
                 coords_labels = self.data_frame.loc[1]
@@ -91,26 +105,23 @@ class DataDisplay(qtw.QWidget):
                 self.data_frame.columns = labels
                 self.data_frame = self.data_frame.iloc[2: , : ]
                 self.data_frame.index = range(len(self.data_frame.index))
-                self.data_frame.rename({'bodyparts_coords': 'frame_number'}, axis= 'columns', inplace= True)
+                self.data_frame = self.data_frame.drop(columns=["bodyparts_coords"])
 
-                #this regex line raises a FutureWarning and could break in later versions of PyQt
-                self.data_frame.columns = self.data_frame.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '')
                 #create a list of the bodyparts add to the list widget: only add one for each triplet of x,y, likelihood
-                bodypart_list = []
+                self.bodypart_list.clear()
                 for col in self.data_frame.columns:
                     #convert dtype from object to float64
                     self.data_frame[col] = pd.to_numeric(self.data_frame[col],errors = 'coerce')
                     #add column label to listWidget
                     bodyparts_label = str(col).split('_')[0]
-                    if bodyparts_label not in bodypart_list:
-                        bodypart_list.append(bodyparts_label)
+                    if bodyparts_label not in self.bodypart_list:
+                        self.bodypart_list.append(bodyparts_label)
                         item = qtw.QListWidgetItem(bodyparts_label)
                         self.listWidget.addItem(item)
                 
                 self.num_frames = len(self.data_frame.index)
                 self.plot.axes[0].clear()
                 self.plot.axes[1].clear()
-                #self.plot.axes.plot(self.data_frame.iloc[:,0], self.data_frame.iloc[:,0], label = self.data_frame.columns[0])
                 self.plot.axes[0].set_xlabel('Frame Number')
                 self.plot.axes[0].set_ylabel('Pixel Coordinate (X)')
                 self.plot.axes[1].set_xlabel('Frame Number')
@@ -126,7 +137,39 @@ class DataDisplay(qtw.QWidget):
             except Exception as e:
                 show_warning_messagebox(str(e))
                 print(str(e))
-    
+
+    #save the data w/ current threshold to file
+    def save_filtered_data(self):
+        save_path, _ = qtw.QFileDialog.getSaveFileName(self, "Save Filtered Data Points to File", '', '*.csv')
+
+        data = []
+        columns = []
+        for body_part in self.bodypart_list:
+            x_data = self.data_frame.loc[:, body_part + "_x"]
+            y_data = self.data_frame.loc[:, body_part + "_y"]
+            likelihood_data = self.data_frame.loc[:, body_part + "_likelihood"]
+
+            x_data = x_data.to_numpy()
+            y_data = y_data.to_numpy()
+            likelihood_data = likelihood_data.to_numpy()
+
+            x_data = np.ma.masked_where(likelihood_data < self.threshold, x_data)
+            y_data = np.ma.masked_where(likelihood_data < self.threshold, y_data)
+
+            x_data = np.ma.filled(x_data, np.nan)
+            y_data = np.ma.filled(x_data, np.nan)
+
+            columns.append(body_part+"_x")
+            columns.append(body_part+"_y")
+            columns.append(body_part+"_likelihood")
+
+            data.append(x_data)
+            data.append(y_data)
+            data.append(likelihood_data)
+        data = np.swapaxes(data, 0, 1)      
+        df = pd.DataFrame(data=data, columns=columns)
+        df.to_csv(save_path)
+  
     #switch the data plotted on the graph
     def change_plotted_data(self):
         while self.plot.axes[0].lines:
@@ -144,19 +187,33 @@ class DataDisplay(qtw.QWidget):
             maxy = -inf
 
         for i in items:
-            x_label = i.text() + "_x"
-            y_label = i.text() + "_y"
-            self.plot.axes[0].plot(self.data_frame.loc[:,'frame_number'], self.data_frame.loc[:, x_label], label = i.text())
-            self.plot.axes[1].plot(self.data_frame.loc[:,'frame_number'], self.data_frame.loc[:, y_label], label = i.text())
 
-            if (minx > min(self.data_frame.loc[:, x_label])):
-                minx = min(self.data_frame.loc[:, x_label])
-            if (maxx < max(self.data_frame.loc[:, x_label])):
-                maxx = max(self.data_frame.loc[:, x_label])
-            if (miny > min(self.data_frame.loc[:, y_label])):
-                miny = min(self.data_frame.loc[:, y_label])
-            if (maxy < max(self.data_frame.loc[:, y_label])):
-                maxy = max(self.data_frame.loc[:, y_label])
+            #update this function to incorporate threshold member variable when plotting
+            x_data = self.data_frame.loc[:, i.text() + "_x"]
+            y_data = self.data_frame.loc[:, i.text() + "_y"]
+            likelihood_data = self.data_frame.loc[:, i.text() + "_likelihood"]
+            x_data = x_data.to_numpy()
+            y_data = y_data.to_numpy()
+            likelihood_data = likelihood_data.to_numpy()
+            x_data = np.ma.masked_where(likelihood_data < self.threshold, x_data)
+            y_data = np.ma.masked_where(likelihood_data < self.threshold, y_data)
+
+            #cmap = matplotlib.colormaps['plasma']
+            #colored = [cmap(tl) for tl in likelihood_data]
+
+
+            self.plot.axes[0].plot(range(len(x_data)), x_data, label = i.text(), marker='.')
+            self.plot.axes[1].plot(range(len(y_data)), y_data, label = i.text(), marker='.')
+
+            #catch runtime warning when all nans (from threshold == 1)
+            if (minx > np.nanmin(x_data)):
+                minx = np.nanmin(x_data)
+            if (maxx < np.nanmax(x_data)):
+                maxx = np.nanmax(x_data)
+            if (miny > np.nanmin(y_data)):
+                miny = np.nanmin(y_data)
+            if (maxy < np.nanmax(y_data)):
+                maxy = np.nanmax(y_data)
         
         self.plot.axes[0].axvline(x = self.current_frame, color = 'r', label = 'current frame')
         self.plot.axes[1].axvline(x = self.current_frame, color = 'r', label = 'current frame')
@@ -166,8 +223,13 @@ class DataDisplay(qtw.QWidget):
         #reset vertical axis range
         dx = (maxx - minx)*0.1
         dy = (maxy - miny)*0.1
-        self.plot.axes[0].set_ylim(minx-dx, maxx+dx)
-        self.plot.axes[1].set_ylim(miny-dy, maxy+dy)
+        try:
+            self.plot.axes[0].set_ylim(minx-dx, maxx+dx)
+            self.plot.axes[1].set_ylim(miny-dy, maxy+dy)
+        except ValueError as e:
+            self.plot.axes[0].set_ylim(0, 1)
+            self.plot.axes[0].set_ylim(0, 1)
+
 
         self.plot.draw_idle()
 
@@ -225,6 +287,15 @@ class DataDisplay(qtw.QWidget):
         #self.graph.axes.set_ylim([ydata - cur_yrange*scale_factor,
                      #ydata + cur_yrange*scale_factor])
         self.plot.draw_idle()
+
+    #========DATA MANIPULATION===========
+    def set_likelihood_threshold(self):
+        self.threshold, done = qtw.QInputDialog.getDouble(self,
+         "Threshold Dialog",
+          "Enter a likelihood value between 0-1. Graph will only display points above this threshold.",
+          value=0, min=0, max=1, decimals=3)
+        self.change_plotted_data()
+        
 
     #========VIDEO FUNCTIONALITY=========
     #Slide a vertical line along the graph as the video frame changes
