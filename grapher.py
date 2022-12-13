@@ -44,10 +44,6 @@ class DataDisplay(qtw.QWidget):
         self.show()
 
     def init_ui(self):
-        #create a label for the graph
-        self.graph_label = qtw.QLabel("Ankle Position by Time")
-        self.graph_label.setFont(qtg.QFont(''))
-        self.graph_label.setFixedHeight(50)
 
         #create open-file button
         self.openBtn = qtw.QPushButton('Open CSV Data')
@@ -101,6 +97,7 @@ class DataDisplay(qtw.QWidget):
             try:
                 #load data into pandas dataframe
                 self.data_frame = pd.read_csv(filename)
+
                 #clean data by combining labels and reindexing
                 bodyparts_labels = self.data_frame.loc[0]
                 coords_labels = self.data_frame.loc[1]
@@ -108,10 +105,8 @@ class DataDisplay(qtw.QWidget):
                 self.data_frame.columns = labels
                 self.data_frame = self.data_frame.iloc[2: , : ]
                 self.data_frame.index = range(len(self.data_frame.index))
-                self.data_frame.rename({'bodyparts_coords': 'frame_number'}, axis= 'columns', inplace= True)
+                self.data_frame = self.data_frame.drop(columns=["bodyparts_coords"])
 
-                #this regex line raises a FutureWarning and could break in later versions of PyQt
-                self.data_frame.columns = self.data_frame.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '')
                 #create a list of the bodyparts add to the list widget: only add one for each triplet of x,y, likelihood
                 self.bodypart_list.clear()
                 for col in self.data_frame.columns:
@@ -127,7 +122,6 @@ class DataDisplay(qtw.QWidget):
                 self.num_frames = len(self.data_frame.index)
                 self.plot.axes[0].clear()
                 self.plot.axes[1].clear()
-                #self.plot.axes.plot(self.data_frame.iloc[:,0], self.data_frame.iloc[:,0], label = self.data_frame.columns[0])
                 self.plot.axes[0].set_xlabel('Frame Number')
                 self.plot.axes[0].set_ylabel('Pixel Coordinate (X)')
                 self.plot.axes[1].set_xlabel('Frame Number')
@@ -146,8 +140,7 @@ class DataDisplay(qtw.QWidget):
 
     #save the data w/ current threshold to file
     def save_filtered_data(self):
-        save_path, _ = qtw.QFileDialog.getSaveFileName(self, "Save Filtered Data Points to File")
-        self.bodypart_list.remove("frame")      #quick and dirty 
+        save_path, _ = qtw.QFileDialog.getSaveFileName(self, "Save Filtered Data Points to File", '', '*.csv')
 
         data = []
         columns = []
@@ -155,7 +148,7 @@ class DataDisplay(qtw.QWidget):
             x_data = self.data_frame.loc[:, body_part + "_x"]
             y_data = self.data_frame.loc[:, body_part + "_y"]
             likelihood_data = self.data_frame.loc[:, body_part + "_likelihood"]
-            
+
             x_data = x_data.to_numpy()
             y_data = y_data.to_numpy()
             likelihood_data = likelihood_data.to_numpy()
@@ -176,11 +169,7 @@ class DataDisplay(qtw.QWidget):
         data = np.swapaxes(data, 0, 1)      
         df = pd.DataFrame(data=data, columns=columns)
         df.to_csv(save_path)
-            
-        
-
-
-    
+  
     #switch the data plotted on the graph
     def change_plotted_data(self):
         while self.plot.axes[0].lines:
@@ -198,12 +187,10 @@ class DataDisplay(qtw.QWidget):
             maxy = -inf
 
         for i in items:
-            x_label = i.text() + "_x"
-            y_label = i.text() + "_y"
 
             #update this function to incorporate threshold member variable when plotting
-            x_data = self.data_frame.loc[:, x_label]
-            y_data = self.data_frame.loc[:, y_label]
+            x_data = self.data_frame.loc[:, i.text() + "_x"]
+            y_data = self.data_frame.loc[:, i.text() + "_y"]
             likelihood_data = self.data_frame.loc[:, i.text() + "_likelihood"]
             x_data = x_data.to_numpy()
             y_data = y_data.to_numpy()
@@ -236,8 +223,13 @@ class DataDisplay(qtw.QWidget):
         #reset vertical axis range
         dx = (maxx - minx)*0.1
         dy = (maxy - miny)*0.1
-        self.plot.axes[0].set_ylim(minx-dx, maxx+dx)
-        self.plot.axes[1].set_ylim(miny-dy, maxy+dy)
+        try:
+            self.plot.axes[0].set_ylim(minx-dx, maxx+dx)
+            self.plot.axes[1].set_ylim(miny-dy, maxy+dy)
+        except ValueError as e:
+            self.plot.axes[0].set_ylim(0, 1)
+            self.plot.axes[0].set_ylim(0, 1)
+
 
         self.plot.draw_idle()
 
