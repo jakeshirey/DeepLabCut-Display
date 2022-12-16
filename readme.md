@@ -38,7 +38,7 @@ Building the application is the next step. The application can simply be compile
 
         python mainGUI.py
         
-or the application can be compiled once into an executable file (.exe) using the pyinstaller library. If the external libraries have been installed from requirements.txt then pyinstaller is already ready to go. Simply run the command:
+OR the application can be compiled once into an executable file (.exe) using the pyinstaller library. If the external libraries have been installed from requirements.txt then pyinstaller is already ready to go. Simply run the command:
 
         pyinstaller --onefile mainGUI.py
 
