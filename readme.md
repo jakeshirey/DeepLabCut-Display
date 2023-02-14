@@ -43,3 +43,7 @@ OR the application can be compiled once into an executable file (.exe) using the
         pyinstaller --onefile mainGUI.py
 
 and wait for the process to finish executing. This should create a 'dist' folder in the same directory that holds the executable file with the same name. This executable is now available to be used!
+
+# Video Guides
+Installation Tutorial: https://youtu.be/Ynq2oSQp2v0
+Usage Tutorial: https://youtu.be/U5V9ag9aJ04
