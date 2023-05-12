@@ -21,6 +21,8 @@ import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 
+import gait_parameters
+
 class MplCanvas(FigureCanvasQTAgg):
     def __init__(self):
         self.fig, self.axes = plt.subplots(2, 1, constrained_layout = True)
@@ -53,6 +55,10 @@ class DataDisplay(qtw.QWidget):
         self.thresholdBtn = qtw.QPushButton('Set Likelihood Threshold')
         self.thresholdBtn.clicked.connect(self.set_likelihood_threshold)
 
+        #create calculate a new column button
+        self.calcBtn = qtw.QPushButton("Calculate a New Column")
+        self.calcBtn.clicked.connect(self.calc_new_column)
+
         #create save data button
         self.saveBtn = qtw.QPushButton('Save Data')
         self.saveBtn.clicked.connect(self.save_filtered_data)
@@ -68,12 +74,12 @@ class DataDisplay(qtw.QWidget):
         self.plot.mpl_connect('motion_notify_event', self.move_mouse)
 
 
-        #create a listWidget to control plotted variables
-        self.listWidget = qtw.QListWidget()
-        self.listWidget.setMaximumWidth(200)
-        self.listWidget.setSelectionMode(2) #2 == MultiSelection, 3 == ExtendedSelection
-        self.listWidget.itemClicked.connect(self.change_plotted_data)
-        self.listWidget.itemSelectionChanged.connect(self.change_plotted_data)
+        #create a list_widget to control plotted variables
+        self.list_widget = qtw.QListWidget()
+        self.list_widget.setMaximumWidth(200)
+        self.list_widget.setSelectionMode(2) #2 == MultiSelection, 3 == ExtendedSelection
+        self.list_widget.itemClicked.connect(self.change_plotted_data)
+        self.list_widget.itemSelectionChanged.connect(self.change_plotted_data)
 
         #add widgets to layout
         graphLayout = qtw.QHBoxLayout()
@@ -82,10 +88,11 @@ class DataDisplay(qtw.QWidget):
         plotLayout.addWidget(self.plot)
         buttonLayout.addWidget(self.openBtn)
         buttonLayout.addWidget(self.thresholdBtn)
+        buttonLayout.addWidget(self.calcBtn)
         buttonLayout.addWidget(self.saveBtn)
         plotLayout.addLayout(buttonLayout)
         graphLayout.addLayout(plotLayout)
-        graphLayout.addWidget(self.listWidget)
+        graphLayout.addWidget(self.list_widget)
         self.setLayout(graphLayout)
 
 
@@ -112,12 +119,12 @@ class DataDisplay(qtw.QWidget):
                 for col in self.data_frame.columns:
                     #convert dtype from object to float64
                     self.data_frame[col] = pd.to_numeric(self.data_frame[col],errors = 'coerce')
-                    #add column label to listWidget
+                    #add column label to list_widget
                     bodyparts_label = str(col).split('_')[0]
                     if bodyparts_label not in self.bodypart_list:
                         self.bodypart_list.append(bodyparts_label)
                         item = qtw.QListWidgetItem(bodyparts_label)
-                        self.listWidget.addItem(item)
+                        self.list_widget.addItem(item)
                 
                 self.num_frames = len(self.data_frame.index)
                 self.plot.axes[0].clear()
@@ -177,7 +184,7 @@ class DataDisplay(qtw.QWidget):
         while self.plot.axes[1].lines:
             self.plot.axes[1].lines.pop()    
         
-        items = self.listWidget.selectedItems()
+        items = self.list_widget.selectedItems()
         #grab max/min y to set plot bounds
         minx, maxx, miny, maxy = 0, 1, 0, 1 #initialized for case of empty plot
         if items:
@@ -295,6 +302,23 @@ class DataDisplay(qtw.QWidget):
           "Enter a likelihood value between 0-1. Graph will only display points above this threshold.",
           value=0, min=0, max=1, decimals=3)
         self.change_plotted_data()
+
+    def calc_new_column(self):
+        items1 = [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
+        items2 = [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
+
+        if items1 and items2:
+            dialog = gait_parameters.ParameterInputDialog(items1, items2)
+            if dialog.exec_() == qtw.QDialog.Accepted:
+                selected_name1 = dialog.selected_name1
+                selected_name2 = dialog.selected_name2
+                qtw.QMessageBox.information(self, "Selected Landmarks", f"Parameter 1: {selected_name1}\nParameter 2: {selected_name2}")
+        else:
+            qtw.QMessageBox.warning(self, "No Names", "The list is empty.")
+           
+            
+          
+            
         
 
     #========VIDEO FUNCTIONALITY=========
