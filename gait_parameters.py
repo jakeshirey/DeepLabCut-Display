@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QListWidget, QPushButton, QDialog, QLabel, QComboBox, QDialogButtonBox, QMessageBox
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QListWidget, QPushButton, QDialog, QLabel, QComboBox, QDialogButtonBox, QMessageBox, QLineEdit
 
 class ParameterInputDialog(QDialog):
     def __init__(self, items1, items2, parent=None):
@@ -8,6 +8,7 @@ class ParameterInputDialog(QDialog):
         self.items2 = items2
         self.selected_name1 = None
         self.selected_name2 = None
+        self.text_input = None
 
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -22,6 +23,10 @@ class ParameterInputDialog(QDialog):
         layout.addWidget(QLabel("Parameter 2:"))
         layout.addWidget(self.combo2)
 
+        self.text_input = QLineEdit()
+        layout.addWidget(QLabel("Enter a Name for the New Parameter"))
+        layout.addWidget(self.text_input)
+
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
@@ -30,6 +35,7 @@ class ParameterInputDialog(QDialog):
     def accept(self):
         self.selected_name1 = self.combo1.currentText()
         self.selected_name2 = self.combo2.currentText()
+        self.text_input_value = self.text_input.text()
         super().accept()
 
 

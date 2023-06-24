@@ -312,8 +312,8 @@ class DataDisplay(qtw.QWidget):
             if dialog.exec_() == qtw.QDialog.Accepted:
                 selected_name1 = dialog.selected_name1
                 selected_name2 = dialog.selected_name2
-                qtw.QMessageBox.information(self, "Selected Landmarks", f"Parameter 1: {selected_name1}\nParameter 2: {selected_name2}")
-        else:
+                text_input_value = dialog.text_input_value
+                qtw.QMessageBox.information(self, "Selected Names and Text", f"Parameter 1: {selected_name1}\nParameter 2: {selected_name2}\nText Input: {text_input_value}")
             qtw.QMessageBox.warning(self, "No Names", "The list is empty.")
            
             
