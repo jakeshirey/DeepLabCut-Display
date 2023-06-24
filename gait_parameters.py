@@ -1,79 +1,101 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QListWidget, QPushButton, QDialog, QLabel, QComboBox, QDialogButtonBox, QMessageBox, QLineEdit
-
+from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, QListWidget, QPushButton, QDialog, QLabel, QComboBox, QDialogButtonBox, QMessageBox, QLineEdit
+from PyQt5.QtGui import QFont
 class ParameterInputDialog(QDialog):
-    def __init__(self, items1, items2, parent=None):
+    def __init__(self, items, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Select Names")
-        self.items1 = items1
-        self.items2 = items2
-        self.selected_name1 = None
-        self.selected_name2 = None
-        self.text_input = None
+        self.selected_values = {}
 
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        self.combo1 = QComboBox()
-        self.combo1.addItems(items1)
-        layout.addWidget(QLabel("Parameter 1:"))
-        layout.addWidget(self.combo1)
+        labels = [
+            ("Left Shank", ["Left Hind Hock", "Left Hind Fetlock"]),
+            ("Right Shank", ["Right Hind Hock", "Right Hind Fetlock"]),
+            ("Head", ["Poll", "Nostrils"]),
+            ("Hind Limb Length", ["Croup", "Right Hind Hoof"]),
+            ("Hind Leg Length", ["Stifle", "Right Hind Fetlock"]),
+            ("Fore Limb Length", ["Withers", "Right Front Hoof"]),
+            ("Fore Leg Length", ["Elbow", "Right Front Fetlock"]),
+            ("Neck Length", ["Poll", "Withers"]),
+            ("Forelimb Angle", ["Withers", "Right Front Hoof"]),
+            ("Hind Limb Angle", ["Croup", "Right Hind Hoof"]),
+            ("Fore Fetlock Angle", ["Right Front Fetlock", "Right Front Hoof", "Right Knee"]),
+            ("Hind Fetlock Angle", ["Right Hind Fetlock", "Right Hind Hoof", "Right Hock"])
+        ]
 
-        self.combo2 = QComboBox()
-        self.combo2.addItems(items2)
-        layout.addWidget(QLabel("Parameter 2:"))
-        layout.addWidget(self.combo2)
+        for main_label, sub_labels in labels:
+            hbox = QHBoxLayout()
+            layout.addLayout(hbox)
 
-        self.text_input = QLineEdit()
-        layout.addWidget(QLabel("Enter a Name for the New Parameter"))
-        layout.addWidget(self.text_input)
+            main_label_label = QLabel(main_label)
+            font = QFont()
+            font.setBold(True)
+            font.setPointSize(12)
+            main_label_label.setFont(font)
+            hbox.addWidget(main_label_label)
 
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        button_box.accepted.connect(self.accept)
-        button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
+            for sub_label in sub_labels:
+                sub_label_label = QLabel(sub_label)
+                hbox.addWidget(sub_label_label)
 
-    def accept(self):
-        self.selected_name1 = self.combo1.currentText()
-        self.selected_name2 = self.combo2.currentText()
-        self.text_input_value = self.text_input.text()
-        super().accept()
+                combo_box = QComboBox()
+                combo_box.addItems(items)
+                hbox.addWidget(combo_box)
+
+                self.selected_values[sub_label] = combo_box
+
+        calculate_button = QPushButton("Calculate")
+        calculate_button.clicked.connect(self.calculate)
+        layout.addWidget(calculate_button)
+
+    def calculate(self):
+        selected_values = {}
+        for sub_label, combo_box in self.selected_values.items():
+            selected_values[sub_label] = combo_box.currentText()
+
+        self.selected_values = selected_values
+        self.accept()
 
 
-class MyGUI(QWidget):
-    def __init__(self):
-        super().__init__()
+class MyGUI(QDialog):
+    def __init__(self, items, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("My GUI")
+
         self.list_widget1 = QListWidget(self)
-        self.list_widget1.addItems(["Name 1", "Name 2", "Name 3"])  # Example names
+        self.list_widget1.addItems(items)
 
         self.list_widget2 = QListWidget(self)
-        self.list_widget2.addItems(["Name A", "Name B", "Name C"])  # Example names
+        self.list_widget2.addItems(items)
 
         self.button = QPushButton("Select Names", self)
         self.button.clicked.connect(self.handle_button_click)
 
-        # Set up the layout
         layout = QVBoxLayout()
+        layout.addWidget(self.button)
         layout.addWidget(self.list_widget1)
         layout.addWidget(self.list_widget2)
-        layout.addWidget(self.button)
         self.setLayout(layout)
 
     def handle_button_click(self):
-        items1 = [self.list_widget1.item(i).text() for i in range(self.list_widget1.count())]
-        items2 = [self.list_widget2.item(i).text() for i in range(self.list_widget2.count())]
+        items = [self.list_widget1.item(i).text() for i in range(self.list_widget1.count())]
 
-        if items1 and items2:
-            dialog = ParameterInputDialog(items1, items2)
+        if items:
+            dialog = ParameterInputDialog(items)
             if dialog.exec_() == QDialog.Accepted:
-                selected_name1 = dialog.selected_name1
-                selected_name2 = dialog.selected_name2
-                QMessageBox.information(self, "Selected Names", f"Parameter 1: {selected_name1}\nParameter 2: {selected_name2}")
+                selected_values = dialog.selected_values
+                print(selected_values)
         else:
-            QMessageBox.warning(self, "No Names", "The list is empty.")
+            print("The list is empty.")
 
 
 if __name__ == "__main__":
-    app = QApplication([])
-    gui = MyGUI()
+    import sys
+    app = QApplication(sys.argv)
+    items = ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]
+
+    gui = MyGUI(items)
     gui.show()
-    app.exec_()
+
+    sys.exit(app.exec_())
