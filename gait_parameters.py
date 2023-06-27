@@ -1,93 +1,92 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, QListWidget, QPushButton, QDialog, QLabel, QComboBox, QDialogButtonBox, QMessageBox, QLineEdit
-from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QCheckBox, QListWidget, QApplication
+
 class ParameterInputDialog(QDialog):
     def __init__(self, items, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Select Names")
-        self.selected_values = {}
+        self.setWindowTitle("Calculate Gait Parameters")
 
-        layout = QVBoxLayout()
+        self.items = items
+        self.landmarks = ["Left Hind Hock", "Left Hind Fetlock", "Right Hind Hock", "Right Hind Fetlock",
+                           "Poll", "Nostrils", "Croup", "Right Hind Hoof", "Stifle", "Right Hind Fetlock",
+                           "Withers", "Right Front Hoof", "Elbow", "Right Front Fetlock", "Right Front Fetlock",
+                           "Right Front Hoof", "Right Knee", "Right Hind Fetlock", "Right Hind Hoof", "Right Hock"]
+
+        self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length",
+                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Limb Angle",
+                                "Hind Limb Angle", "Fore Fetlock Angle", "Hind Fetlock Angle"]
+
+        self.parameter_inputs = {}
+        self.include_checklist = None
+
+        layout = QHBoxLayout()
         self.setLayout(layout)
 
-        labels = [
-            ("Left Shank", ["Left Hind Hock", "Left Hind Fetlock"]),
-            ("Right Shank", ["Right Hind Hock", "Right Hind Fetlock"]),
-            ("Head", ["Poll", "Nostrils"]),
-            ("Hind Limb Length", ["Croup", "Right Hind Hoof"]),
-            ("Hind Leg Length", ["Stifle", "Right Hind Fetlock"]),
-            ("Fore Limb Length", ["Withers", "Right Front Hoof"]),
-            ("Fore Leg Length", ["Elbow", "Right Front Fetlock"]),
-            ("Neck Length", ["Poll", "Withers"]),
-            ("Forelimb Angle", ["Withers", "Right Front Hoof"]),
-            ("Hind Limb Angle", ["Croup", "Right Hind Hoof"]),
-            ("Fore Fetlock Angle", ["Right Front Fetlock", "Right Front Hoof", "Right Knee"]),
-            ("Hind Fetlock Angle", ["Right Hind Fetlock", "Right Hind Hoof", "Right Hock"])
-        ]
+        landmarks_layout = QVBoxLayout()
+        landmarks_layout.addWidget(QLabel("Confirm Landmark Points"))
+        # Create the sub label inputs
+        for sub_label in self.landmarks:
+            sub_label_layout = QHBoxLayout()
 
-        for main_label, sub_labels in labels:
-            hbox = QHBoxLayout()
-            layout.addLayout(hbox)
+            label = QLabel(sub_label)
+            sub_label_layout.addWidget(label)
 
-            main_label_label = QLabel(main_label)
-            font = QFont()
-            font.setBold(True)
-            font.setPointSize(12)
-            main_label_label.setFont(font)
-            hbox.addWidget(main_label_label)
+            combobox = QComboBox()
+            combobox.addItems(self.items)
+            self.parameter_inputs[sub_label] = combobox
+            sub_label_layout.addWidget(combobox)
 
-            for sub_label in sub_labels:
-                sub_label_label = QLabel(sub_label)
-                hbox.addWidget(sub_label_label)
+            landmarks_layout.addLayout(sub_label_layout)
+        layout.addLayout(landmarks_layout)
 
-                combo_box = QComboBox()
-                combo_box.addItems(items)
-                hbox.addWidget(combo_box)
+        gait_params_layout = QVBoxLayout()
+        # Gait Parameters label
+        gait_parameters_label = QLabel("Choose Gait Parameters")
+        gait_params_layout.addWidget(gait_parameters_label)
 
-                self.selected_values[sub_label] = combo_box
+        # Gait Parameters checklist
+        self.gait_parameters_checklist = QListWidget()
+        self.gait_parameters_checklist.setSelectionMode(QListWidget.MultiSelection)
+        self.gait_parameters_checklist.addItems(self.gait_parameters)
+        gait_params_layout.addWidget(self.gait_parameters_checklist)
+
+        layout.addLayout(gait_params_layout)
+
+        # Include checklist
+        include_layout = QVBoxLayout()
+        include_label = QLabel("Include Summary Statistics")
+        include_layout.addWidget(include_label)
+
+        include_checklist = QListWidget()
+        include_checklist.setSelectionMode(QListWidget.MultiSelection)
+        include_checklist.addItems(["Minimum", "Maximum", "Average", "Standard Deviation"])
+        self.include_checklist = include_checklist
+
+        include_checklist_layout = QHBoxLayout()
+        include_checklist_layout.addStretch()
+        include_checklist_layout.addWidget(include_checklist)
+        include_checklist_layout.addStretch()
+
+        include_layout.addLayout(include_checklist_layout)
+
+        layout.addLayout(include_layout)
 
         calculate_button = QPushButton("Calculate")
-        calculate_button.clicked.connect(self.calculate)
+        calculate_button.clicked.connect(self.calculate_button_clicked)
         layout.addWidget(calculate_button)
 
-    def calculate(self):
-        selected_values = {}
-        for sub_label, combo_box in self.selected_values.items():
-            selected_values[sub_label] = combo_box.currentText()
+    def calculate_button_clicked(self):
+        landmarks = {}
+        for sub_label, combobox in self.parameter_inputs.items():
+            selected_item = combobox.currentText()
+            landmarks[sub_label] = selected_item
 
-        self.selected_values = selected_values
-        self.accept()
+        gait_parameters = [item.text() for item in self.gait_parameters_checklist.selectedItems()]
 
+        summ_stats = [item.text() for item in self.include_checklist.selectedItems()]
 
-class MyGUI(QDialog):
-    def __init__(self, items, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("My GUI")
-
-        self.list_widget1 = QListWidget(self)
-        self.list_widget1.addItems(items)
-
-        self.list_widget2 = QListWidget(self)
-        self.list_widget2.addItems(items)
-
-        self.button = QPushButton("Select Names", self)
-        self.button.clicked.connect(self.handle_button_click)
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.button)
-        layout.addWidget(self.list_widget1)
-        layout.addWidget(self.list_widget2)
-        self.setLayout(layout)
-
-    def handle_button_click(self):
-        items = [self.list_widget1.item(i).text() for i in range(self.list_widget1.count())]
-
-        if items:
-            dialog = ParameterInputDialog(items)
-            if dialog.exec_() == QDialog.Accepted:
-                selected_values = dialog.selected_values
-                print(selected_values)
-        else:
-            print("The list is empty.")
+        print("Landmarks:", landmarks)
+        print("Gait Parameters:", gait_parameters)
+        print("Summary Statistics:", summ_stats)
 
 
 if __name__ == "__main__":
@@ -95,7 +94,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     items = ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]
 
-    gui = MyGUI(items)
+    gui = ParameterInputDialog(items)
     gui.show()
 
     sys.exit(app.exec_())
