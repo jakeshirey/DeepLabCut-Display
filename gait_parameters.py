@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QCheckBox, QListWidget, QApplication
 import pandas as pd
+import numpy as np
 
 class ParameterInputDialog(QDialog):
     def __init__(self, items, data_frame, parent=None):
@@ -97,7 +98,21 @@ class ParameterInputDialog(QDialog):
 
     def perform_calculations(self):
         calc_frame = pd.DataFrame(columns=self.queried_gait_parameters)
+
+
+
         print(calc_frame)
+
+def angle(vertex, point1, point2):
+    vector1 = point1 - vertex
+    vector2 = point2 - vertex
+    angle = np.arctan2(np.linalg.det([vector1, vector2]), np.dot(vector1, vector2))
+    angle = np.degrees(angle)
+    return angle
+
+def distance(point1, point2):
+    return np.linalg.norm(point2 - point1)
+
 
 
 #Testing script for widget
