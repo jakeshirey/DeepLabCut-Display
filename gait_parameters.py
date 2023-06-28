@@ -18,6 +18,10 @@ class ParameterInputDialog(QDialog):
         self.parameter_inputs = {}
         self.include_checklist = None
 
+        self.confirmed_landmarks = {}
+        self.summ_stats = []
+        self.queried_gait_parameters = []
+
         layout = QHBoxLayout()
         self.setLayout(layout)
 
@@ -75,18 +79,15 @@ class ParameterInputDialog(QDialog):
         layout.addWidget(calculate_button)
 
     def calculate_button_clicked(self):
-        landmarks = {}
+        
         for sub_label, combobox in self.parameter_inputs.items():
             selected_item = combobox.currentText()
-            landmarks[sub_label] = selected_item
+            self.confirmed_landmarks[sub_label] = selected_item
 
-        gait_parameters = [item.text() for item in self.gait_parameters_checklist.selectedItems()]
+        self.queried_gait_parameters = [item.text() for item in self.gait_parameters_checklist.selectedItems()]
 
-        summ_stats = [item.text() for item in self.include_checklist.selectedItems()]
-
-        print("Landmarks:", landmarks)
-        print("Gait Parameters:", gait_parameters)
-        print("Summary Statistics:", summ_stats)
+        self.summ_stats = [item.text() for item in self.include_checklist.selectedItems()]
+        self.accept()
 
 
 if __name__ == "__main__":

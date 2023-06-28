@@ -56,8 +56,8 @@ class DataDisplay(qtw.QWidget):
         self.thresholdBtn.clicked.connect(self.set_likelihood_threshold)
 
         #create calculate a new column button
-        self.calcBtn = qtw.QPushButton("Calculate a New Column")
-        self.calcBtn.clicked.connect(self.calc_new_column)
+        self.calcBtn = qtw.QPushButton("Calculate Gait Parameters")
+        self.calcBtn.clicked.connect(self.calc_gait_parameters)
 
         #create save data button
         self.saveBtn = qtw.QPushButton('Save Data')
@@ -303,17 +303,16 @@ class DataDisplay(qtw.QWidget):
           value=0, min=0, max=1, decimals=3)
         self.change_plotted_data()
 
-    def calc_new_column(self):
-        items1 = [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
-        items2 = [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
+    def calc_gait_parameters(self):
+        items = [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
 
-        if items1 and items2:
-            dialog = gait_parameters.ParameterInputDialog(items1, items2)
+        if items:
+            dialog = gait_parameters.ParameterInputDialog(items)
             if dialog.exec_() == qtw.QDialog.Accepted:
-                selected_name1 = dialog.selected_name1
-                selected_name2 = dialog.selected_name2
-                text_input_value = dialog.text_input_value
-                qtw.QMessageBox.information(self, "Selected Names and Text", f"Parameter 1: {selected_name1}\nParameter 2: {selected_name2}\nText Input: {text_input_value}")
+                print("Landmarks:", dialog.confirmed_landmarks)
+                print("Gait Parameters:", dialog.queried_gait_parameters)
+                print("Summary Statistics:", dialog.summ_stats)
+        else:
             qtw.QMessageBox.warning(self, "No Names", "The list is empty.")
            
             
