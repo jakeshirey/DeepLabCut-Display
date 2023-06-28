@@ -1,11 +1,14 @@
 from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QCheckBox, QListWidget, QApplication
+import pandas as pd
 
 class ParameterInputDialog(QDialog):
-    def __init__(self, items, parent=None):
+    def __init__(self, items, data_frame, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Calculate Gait Parameters")
 
         self.items = items
+        self.data = data_frame
+
         self.landmarks = ["Left Hind Hock", "Left Hind Fetlock", "Right Hind Hock", "Right Hind Fetlock",
                            "Poll", "Nostrils", "Croup", "Right Hind Hoof", "Stifle", "Right Hind Fetlock",
                            "Withers", "Right Front Hoof", "Elbow", "Right Front Fetlock", "Right Front Fetlock",
@@ -87,9 +90,17 @@ class ParameterInputDialog(QDialog):
         self.queried_gait_parameters = [item.text() for item in self.gait_parameters_checklist.selectedItems()]
 
         self.summ_stats = [item.text() for item in self.include_checklist.selectedItems()]
+
+        self.perform_calculations()
+
         self.accept()
 
+    def perform_calculations(self):
+        calc_frame = pd.DataFrame(columns=self.queried_gait_parameters)
+        print(calc_frame)
 
+
+#Testing script for widget
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)

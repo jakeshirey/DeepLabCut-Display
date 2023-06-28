@@ -299,7 +299,7 @@ class DataDisplay(qtw.QWidget):
     def set_likelihood_threshold(self):
         self.threshold, done = qtw.QInputDialog.getDouble(self,
          "Threshold Dialog",
-          "Enter a likelihood value between 0-1. Graph will only display points above this threshold.",
+         "Enter a likelihood value between 0-1. Graph will only display points above this threshold.",
           value=0, min=0, max=1, decimals=3)
         self.change_plotted_data()
 
@@ -307,19 +307,16 @@ class DataDisplay(qtw.QWidget):
         items = [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
 
         if items:
-            dialog = gait_parameters.ParameterInputDialog(items)
+            dialog = gait_parameters.ParameterInputDialog(items, self.data_frame)
             if dialog.exec_() == qtw.QDialog.Accepted:
                 print("Landmarks:", dialog.confirmed_landmarks)
                 print("Gait Parameters:", dialog.queried_gait_parameters)
                 print("Summary Statistics:", dialog.summ_stats)
-        else:
-            qtw.QMessageBox.warning(self, "No Names", "The list is empty.")
-           
-            
-          
-            
-        
 
+        else:
+            qtw.QMessageBox.warning(self, "No landmarks are available! Try loading a data file.")
+            return
+        
     #========VIDEO FUNCTIONALITY=========
     #Slide a vertical line along the graph as the video frame changes
     def video_position_changed(self, position):
