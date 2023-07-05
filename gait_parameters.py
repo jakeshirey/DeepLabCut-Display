@@ -2,6 +2,22 @@ from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout, QHBoxLayout, QComboBox
 import pandas as pd
 import numpy as np
 
+def angle(vertex, point1, point2):
+    vertex = np.array(vertex)
+    point1 = np.array(point1)
+    point2 = np.array(point2)
+
+    vector1 = point1 - vertex
+    vector2 = point2 - vertex
+    angle = np.arctan2(np.linalg.det([vector1, vector2]), np.dot(vector1, vector2))
+    angle = np.degrees(angle)
+    return angle
+
+def distance(point1, point2):
+    point1 = np.array(point1)
+    point2 = np.array(point2)
+    return np.linalg.norm(point2 - point1)
+
 class ParameterInputDialog(QDialog):
     def __init__(self, items, data_frame: pd.DataFrame, parent=None):
         super().__init__(parent)
@@ -100,28 +116,21 @@ class ParameterInputDialog(QDialog):
         calc_frame = pd.DataFrame(columns=self.queried_gait_parameters, index=self.data.index)
 
         if "Right Shank" in self.queried_gait_parameters:
-            calc_frame['distance'] = np.vectorize(distance)(self.data[[self.confirmed_landmarks['Right Hind Hock'] + '_x', self.confirmed_landmarks['Right Hind Hock'] + '_y']],
-                                                            self.data[[self.confirmed_landmarks['Right Hind Fetlock'] + '_x', self.confirmed_landmarks['Right Hind Fetlock'] + '_y']])
+            calc_frame['Right Shank'] = self.vectorized_distance(column1="Right Hind Hock", column2= "Right Hind Fetlock")
 
 
         print(calc_frame)
+    
+    def vectorized_distance(self, column1: str, column2: str):
+        '''
+        Wrapper function to neatly perform a vectorized distance operation on column1 and column2. Returns a numpy ndarray.
+        '''
+        column1x = self.confirmed_landmarks[column1] + '_x'
+        column1y = self.confirmed_landmarks[column1] + '_y'
+        column2x = self.confirmed_landmarks[column2] + '_x'
+        column2y = self.confirmed_landmarks[column2] + '_y'
 
-def angle(vertex, point1, point2):
-    vertex = np.array(vertex)
-    point1 = np.array(point1)
-    point2 = np.array(point2)
-
-    vector1 = point1 - vertex
-    vector2 = point2 - vertex
-    angle = np.arctan2(np.linalg.det([vector1, vector2]), np.dot(vector1, vector2))
-    angle = np.degrees(angle)
-    return angle
-
-def distance(point1, point2):
-    point1 = np.array(point1)
-    point2 = np.array(point2)
-    return np.linalg.norm(point2 - point1)
-
+        return np.vectorize(distance, signature='(n),(n)->()')(self.data[[column1x, column1y]].values, self.data[[column2x, column2y]].values)
 
 #Testing script for widget
 if __name__ == "__main__":

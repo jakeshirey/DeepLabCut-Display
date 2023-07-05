@@ -36,12 +36,12 @@ def test_vectorized_distance():
                    'landmark1_y': [4, 5, 6],
                    'landmark2_x': [7, 8, 9],
                    'landmark2_y': [10, 11, 12],
-                   'distance': [7.810250, 7.810250, 7.810250]})
+                   'distance': [8.485281, 8.485281, 8.485281]})
     # Apply the distance function using vectorized operations
     df['computed_distance'] = np.vectorize(gp.distance, signature='(n),(n)->()')(df[['landmark1_x', 'landmark1_y']].values,
                                                                               df[['landmark2_x', 'landmark2_y']].values)
 
     # Check if the computed distances match the expected distances
-    assert df['computed_distance'].equals(df['distance'])
+    assert np.allclose(df['computed_distance'], df['distance'])
 # Run the tests
 pytest.main()
