@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 class ParameterInputDialog(QDialog):
-    def __init__(self, items, data_frame, parent=None):
+    def __init__(self, items, data_frame: pd.DataFrame, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Calculate Gait Parameters")
 
@@ -32,18 +32,18 @@ class ParameterInputDialog(QDialog):
         landmarks_layout = QVBoxLayout()
         landmarks_layout.addWidget(QLabel("Confirm Landmark Points"))
         # Create the sub label inputs
-        for sub_label in self.landmarks:
-            sub_label_layout = QHBoxLayout()
+        for landmark in self.landmarks:
+            landmark_layout = QHBoxLayout()
 
-            label = QLabel(sub_label)
-            sub_label_layout.addWidget(label)
+            label = QLabel(landmark)
+            landmark_layout.addWidget(label)
 
             combobox = QComboBox()
             combobox.addItems(self.items)
-            self.parameter_inputs[sub_label] = combobox
-            sub_label_layout.addWidget(combobox)
+            self.parameter_inputs[landmark] = combobox
+            landmark_layout.addWidget(combobox)
 
-            landmarks_layout.addLayout(sub_label_layout)
+            landmarks_layout.addLayout(landmark_layout)
         layout.addLayout(landmarks_layout)
 
         gait_params_layout = QVBoxLayout()
@@ -84,9 +84,9 @@ class ParameterInputDialog(QDialog):
 
     def calculate_button_clicked(self):
         
-        for sub_label, combobox in self.parameter_inputs.items():
+        for landmark, combobox in self.parameter_inputs.items():
             selected_item = combobox.currentText()
-            self.confirmed_landmarks[sub_label] = selected_item
+            self.confirmed_landmarks[landmark] = selected_item
 
         self.queried_gait_parameters = [item.text() for item in self.gait_parameters_checklist.selectedItems()]
 
@@ -97,13 +97,20 @@ class ParameterInputDialog(QDialog):
         self.accept()
 
     def perform_calculations(self):
-        calc_frame = pd.DataFrame(columns=self.queried_gait_parameters)
+        calc_frame = pd.DataFrame(columns=self.queried_gait_parameters, index=self.data.index)
 
+        if "Right Shank" in self.queried_gait_parameters:
+            calc_frame['distance'] = np.vectorize(distance)(self.data[[self.confirmed_landmarks['Right Hind Hock'] + '_x', self.confirmed_landmarks['Right Hind Hock'] + '_y']],
+                                                            self.data[[self.confirmed_landmarks['Right Hind Fetlock'] + '_x', self.confirmed_landmarks['Right Hind Fetlock'] + '_y']])
 
 
         print(calc_frame)
 
 def angle(vertex, point1, point2):
+    vertex = np.array(vertex)
+    point1 = np.array(point1)
+    point2 = np.array(point2)
+
     vector1 = point1 - vertex
     vector2 = point2 - vertex
     angle = np.arctan2(np.linalg.det([vector1, vector2]), np.dot(vector1, vector2))
@@ -111,8 +118,9 @@ def angle(vertex, point1, point2):
     return angle
 
 def distance(point1, point2):
+    point1 = np.array(point1)
+    point2 = np.array(point2)
     return np.linalg.norm(point2 - point1)
-
 
 
 #Testing script for widget
