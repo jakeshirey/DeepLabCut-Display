@@ -26,10 +26,10 @@ class ParameterInputDialog(QDialog):
         self.items = items
         self.data = data_frame
 
-        self.landmarks = ["Left Hind Hock", "Left Hind Fetlock", "Right Hind Hock", "Right Hind Fetlock",
-                           "Poll", "Nostrils", "Croup", "Right Hind Hoof", "Stifle", "Right Hind Fetlock",
-                           "Withers", "Right Front Hoof", "Elbow", "Right Front Fetlock", "Right Front Fetlock",
-                           "Right Front Hoof", "Right Knee", "Right Hind Fetlock", "Right Hind Hoof", "Right Hock"]
+        self.landmarks = ["Nostril", "Poll", "Withers", "Shoulder", "Elbow", "Mid Back", "Croup", "Hip", 
+                          "Stifle", "Dock", "Left Front Hoof", "Left Hind Hoof", "Left Hock", "Left Front Fetlock",
+                            "Left Hind Fetlock", "Left Knee", "Right Front Hoof", "Right Hind Hoof", "Right Hock",
+                            "Right Front Fetlock", "Right Hind Fetlock", "Right Knee"]
 
         self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length",
                                 "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Limb Angle",
@@ -55,7 +55,9 @@ class ParameterInputDialog(QDialog):
             landmark_layout.addWidget(label)
 
             combobox = QComboBox()
+            combobox.addItems(["NOT AVAILABLE"])
             combobox.addItems(self.items)
+            
             self.parameter_inputs[landmark] = combobox
             landmark_layout.addWidget(combobox)
 
@@ -108,6 +110,10 @@ class ParameterInputDialog(QDialog):
 
         self.summ_stats = [item.text() for item in self.include_checklist.selectedItems()]
 
+        print(self.queried_gait_parameters)
+        print(self.confirmed_landmarks)
+        print(self.summ_stats)
+
         self.perform_calculations()
 
         self.accept()
@@ -115,9 +121,25 @@ class ParameterInputDialog(QDialog):
     def perform_calculations(self):
         calc_frame = pd.DataFrame(columns=self.queried_gait_parameters, index=self.data.index)
 
+        #DISTANCES
         if "Right Shank" in self.queried_gait_parameters:
-            calc_frame['Right Shank'] = self.vectorized_distance(column1="Right Hind Hock", column2= "Right Hind Fetlock")
+            calc_frame['Right Shank'] = self.vectorized_distance(column1="Right Hock", column2= "Right Hind Fetlock")
+        if "Left Shank" in self.queried_gait_parameters:
+            calc_frame['Left Shank'] = self.vectorized_distance(column1="Left Hock", column2="Left Hind Fetlock")
+        if "Head" in self.queried_gait_parameters:
+            calc_frame['Head'] = self.vectorized_distance("Poll", "Nostril")
+        if "Hind Limb Length" in self.queried_gait_parameters:
+            calc_frame['Hind Limb Length'] = self.vectorized_distance("Croup", "Right Hind Hoof")
+        if "Hind Limb Length" in self.queried_gait_parameters:
+            calc_frame['Hind Leg Length'] = self.vectorized_distance("Stifle", "Right Hind Fetlock")
+        if "Fore Limb Length" in self.queried_gait_parameters:
+            calc_frame['Fore Limb Length'] = self.vectorized_distance("Withers", "Right Front Hoof")
+        if "Fore Leg Length" in self.queried_gait_parameters:
+            calc_frame['Fore Leg Length'] = self.vectorized_distance("Elbow", "Right Front Fetlock")
+        if "Neck Length" in self.queried_gait_parameters:
+            calc_frame['Neck Length'] = self.vectorized_distance("Poll", "Withers")
 
+        #ANGLES
 
         print(calc_frame)
     
@@ -129,6 +151,11 @@ class ParameterInputDialog(QDialog):
         column1y = self.confirmed_landmarks[column1] + '_y'
         column2x = self.confirmed_landmarks[column2] + '_x'
         column2y = self.confirmed_landmarks[column2] + '_y'
+
+        print(column1x)
+        print(column1y)
+        print(column2x)
+        print(column2y)        
 
         return np.vectorize(distance, signature='(n),(n)->()')(self.data[[column1x, column1y]].values, self.data[[column2x, column2y]].values)
 

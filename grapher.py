@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import csv
 import string
+import traceback
 
 import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as qtg
@@ -98,12 +99,17 @@ class DataDisplay(qtw.QWidget):
 
     #Open CSV data, Plot on Graph
     def open_file(self):
-        filename, _ = qtw.QFileDialog.getOpenFileName(self, "Open CSV Data")
+        filename, _ = qtw.QFileDialog.getOpenFileName(self, "Open Spreadsheet Data")
 
         if filename: 
             try:
                 #load data into pandas dataframe
-                self.data_frame = pd.read_csv(filename)
+                if filename.endswith(".csv"):
+                    self.data_frame = pd.read_csv(filename)
+                elif filename.endswith(".xlsx"):
+                    self.data_frame = pd.read_excel(filename)
+                else:
+                    raise ValueError("Unsupported file type. Only CSV and Excel are allowed.")
 
                 #clean data by combining labels and reindexing
                 bodyparts_labels = self.data_frame.loc[0]
@@ -143,7 +149,7 @@ class DataDisplay(qtw.QWidget):
                 self.plot.draw_idle()
             except Exception as e:
                 show_warning_messagebox(str(e))
-                print(str(e))
+                traceback.print_exc()
 
     #save the data w/ current threshold to file
     def save_filtered_data(self):

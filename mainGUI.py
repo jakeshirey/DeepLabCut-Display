@@ -11,7 +11,7 @@ class MainWindow(qtw.QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("DeepLabCut Data Visualization Tool")
+        self.setWindowTitle("DeepLabCut-Display")
         
         self.videoplayer = videoplayer.VideoPlayer()
         self.videoplayer.setMinimumSize(480,270)
