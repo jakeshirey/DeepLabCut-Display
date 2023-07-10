@@ -61,6 +61,20 @@ def test_distance():
     distance_3 = gp.distance([0, 0], [3, 4])  # Expected distance: 5.0
     assert np.isclose(distance_3, 5.0)
 
+def test_vectorized_angle():
+    df = pd.DataFrame({'vertex_x': [0, 1, 2],
+                    'vertex_y': [0, 1, 2],
+                    'point1_x': [1, 2, 3],
+                    'point1_y': [0, 1, 2],
+                    'point2_x': [0, 1, 2],
+                    'point2_y': [1, 2, 3],
+                    'angle': [90.0, 90.0, 90.0]})
+    # Apply the angle function using vectorized operations
+    df['computed_angle'] = np.vectorize(gp.angle, signature='(n),(n),(n)->()')(df[['vertex_x', 'vertex_y']].values,
+                                                                             df[['point1_x', 'point1_y']].values,
+                                                                             df[['point2_x', 'point2_y']].values)
+    assert np.allclose(df['computed_angle'], df['angle'])
+
 def test_vectorized_distance():
     df = pd.DataFrame({'landmark1_x': [1, 2, 3],
                    'landmark1_y': [4, 5, 6],

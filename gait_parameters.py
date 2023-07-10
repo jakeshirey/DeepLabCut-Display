@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QCheckBox, QListWidget, QApplication
+from PyQt5.QtWidgets import QDialog, QFileDialog, QLabel, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QCheckBox, QListWidget, QApplication
 import pandas as pd
 import numpy as np
 
@@ -140,9 +140,36 @@ class ParameterInputDialog(QDialog):
             calc_frame['Neck Length'] = self.vectorized_distance("Poll", "Withers")
 
         #ANGLES
+        if "Hind Fetlock Angle" in self.queried_gait_parameters:
+            calc_frame['Hind Fetlock Angle'] = self.vectorized_angle("Right Hind Fetlock", "Right Hind Hoof", "Right Hock")
+        if "Fore Fetlock Angle" in self.queried_gait_parameters:
+            calc_frame['Fore Fetlock Angle'] = self.vectorized_angle("Right Front Fetlock", "Right Front Hoof", "Right Knee")
+        #TODO
+        '''
+        if "Hind Limb Angle" in self.queried_gait_parameters:
+            calc_frame['Hind Limb Angle'] = self.vectorized_angle()
+        if "Fore Fetlock Angle" in self.queried_gait_parameters:
+            calc_frame['Fore Limb Angle'] = self.vectorized_angle()
+        '''
 
-        print(calc_frame)
+        save_path, _ = QFileDialog.getSaveFileName(self, "Save Gait Parameters to File", '', '*.csv')
+        calc_frame.to_csv(save_path)
     
+    def vectorized_angle(self, vertex: str, endpoint1: str, endpoint2: str):
+        '''
+        Wrapper function to neatly perform a vectorized angle operation on vertex, endpoint1, and endpoint2. Returns a numpy ndarray.
+        '''
+        vertexx = self.confirmed_landmarks[vertex] + '_x'
+        vertexy = self.confirmed_landmarks[vertex] + '_y'
+        endpoint1x = self.confirmed_landmarks[endpoint1] + '_x'
+        endpoint1y = self.confirmed_landmarks[endpoint1] + '_y'
+        endpoint2x = self.confirmed_landmarks[endpoint2] + '_x'
+        endpoint2y = self.confirmed_landmarks[endpoint2] + '_y'
+
+        return np.vectorize(angle, signature='(n),(n),(n)->()')(self.data[[vertexx, vertexy]].values,
+                                                                             self.data[[endpoint1x, endpoint1y]].values,
+                                                                             self.data[[endpoint2x, endpoint2y]].values)        
+
     def vectorized_distance(self, column1: str, column2: str):
         '''
         Wrapper function to neatly perform a vectorized distance operation on column1 and column2. Returns a numpy ndarray.
@@ -151,11 +178,6 @@ class ParameterInputDialog(QDialog):
         column1y = self.confirmed_landmarks[column1] + '_y'
         column2x = self.confirmed_landmarks[column2] + '_x'
         column2y = self.confirmed_landmarks[column2] + '_y'
-
-        print(column1x)
-        print(column1y)
-        print(column2x)
-        print(column2y)        
 
         return np.vectorize(distance, signature='(n),(n)->()')(self.data[[column1x, column1y]].values, self.data[[column2x, column2y]].values)
 
