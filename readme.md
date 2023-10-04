@@ -10,6 +10,8 @@ This complimentary tool was originally developed for the University of Florida D
 ![display example](https://user-images.githubusercontent.com/94328784/184924777-e04cf534-029f-4e1f-8d42-3d661727edef.JPG)
 
 # Download and Installation
+***Currently, DeepLabCut-Display is only supported on [Python 3.7 to Python 3.10](https://www.python.org/downloads/). Please make sure to use these versions when running Python build commands.***
+
 Begin by downloading the codebase from this GitHub page either from the "download zip" option off the green "Code" button or by running this command:
 
     git clone https://github.com/jakeshirey/DeepLabCut-Display.git
