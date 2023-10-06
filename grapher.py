@@ -16,10 +16,13 @@ import numpy as np
 import pandas as pd
 import csv
 import string
+import traceback
 
 import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
+
+import gait_parameters
 
 class MplCanvas(FigureCanvasQTAgg):
     def __init__(self):
@@ -53,6 +56,10 @@ class DataDisplay(qtw.QWidget):
         self.thresholdBtn = qtw.QPushButton('Set Likelihood Threshold')
         self.thresholdBtn.clicked.connect(self.set_likelihood_threshold)
 
+        #create calculate a new column button
+        self.calcBtn = qtw.QPushButton("Calculate Gait Parameters")
+        self.calcBtn.clicked.connect(self.calc_gait_parameters)
+
         #create save data button
         self.saveBtn = qtw.QPushButton('Save Data')
         self.saveBtn.clicked.connect(self.save_filtered_data)
@@ -68,12 +75,12 @@ class DataDisplay(qtw.QWidget):
         self.plot.mpl_connect('motion_notify_event', self.move_mouse)
 
 
-        #create a listWidget to control plotted variables
-        self.listWidget = qtw.QListWidget()
-        self.listWidget.setMaximumWidth(200)
-        self.listWidget.setSelectionMode(2) #2 == MultiSelection, 3 == ExtendedSelection
-        self.listWidget.itemClicked.connect(self.change_plotted_data)
-        self.listWidget.itemSelectionChanged.connect(self.change_plotted_data)
+        #create a list_widget to control plotted variables
+        self.list_widget = qtw.QListWidget()
+        self.list_widget.setMaximumWidth(200)
+        self.list_widget.setSelectionMode(2) #2 == MultiSelection, 3 == ExtendedSelection
+        self.list_widget.itemClicked.connect(self.change_plotted_data)
+        self.list_widget.itemSelectionChanged.connect(self.change_plotted_data)
 
         #add widgets to layout
         graphLayout = qtw.QHBoxLayout()
@@ -82,21 +89,27 @@ class DataDisplay(qtw.QWidget):
         plotLayout.addWidget(self.plot)
         buttonLayout.addWidget(self.openBtn)
         buttonLayout.addWidget(self.thresholdBtn)
+        buttonLayout.addWidget(self.calcBtn)
         buttonLayout.addWidget(self.saveBtn)
         plotLayout.addLayout(buttonLayout)
         graphLayout.addLayout(plotLayout)
-        graphLayout.addWidget(self.listWidget)
+        graphLayout.addWidget(self.list_widget)
         self.setLayout(graphLayout)
 
 
     #Open CSV data, Plot on Graph
     def open_file(self):
-        filename, _ = qtw.QFileDialog.getOpenFileName(self, "Open CSV Data")
+        filename, _ = qtw.QFileDialog.getOpenFileName(self, "Open Spreadsheet Data")
 
         if filename: 
             try:
                 #load data into pandas dataframe
-                self.data_frame = pd.read_csv(filename)
+                if filename.endswith(".csv"):
+                    self.data_frame = pd.read_csv(filename)
+                elif filename.endswith(".xlsx"):
+                    self.data_frame = pd.read_excel(filename)
+                else:
+                    raise ValueError("Unsupported file type. Only CSV and Excel are allowed.")
 
                 #clean data by combining labels and reindexing
                 bodyparts_labels = self.data_frame.loc[0]
@@ -112,12 +125,12 @@ class DataDisplay(qtw.QWidget):
                 for col in self.data_frame.columns:
                     #convert dtype from object to float64
                     self.data_frame[col] = pd.to_numeric(self.data_frame[col],errors = 'coerce')
-                    #add column label to listWidget
+                    #add column label to list_widget
                     bodyparts_label = str(col).split('_')[0]
                     if bodyparts_label not in self.bodypart_list:
                         self.bodypart_list.append(bodyparts_label)
                         item = qtw.QListWidgetItem(bodyparts_label)
-                        self.listWidget.addItem(item)
+                        self.list_widget.addItem(item)
                 
                 self.num_frames = len(self.data_frame.index)
                 self.plot.axes[0].clear()
@@ -136,7 +149,7 @@ class DataDisplay(qtw.QWidget):
                 self.plot.draw_idle()
             except Exception as e:
                 show_warning_messagebox(str(e))
-                print(str(e))
+                traceback.print_exc()
 
     #save the data w/ current threshold to file
     def save_filtered_data(self):
@@ -177,7 +190,7 @@ class DataDisplay(qtw.QWidget):
         while self.plot.axes[1].lines:
             self.plot.axes[1].lines.pop()    
         
-        items = self.listWidget.selectedItems()
+        items = self.list_widget.selectedItems()
         #grab max/min y to set plot bounds
         minx, maxx, miny, maxy = 0, 1, 0, 1 #initialized for case of empty plot
         if items:
@@ -292,11 +305,24 @@ class DataDisplay(qtw.QWidget):
     def set_likelihood_threshold(self):
         self.threshold, done = qtw.QInputDialog.getDouble(self,
          "Threshold Dialog",
-          "Enter a likelihood value between 0-1. Graph will only display points above this threshold.",
+         "Enter a likelihood value between 0-1. Graph will only display points above this threshold.",
           value=0, min=0, max=1, decimals=3)
         self.change_plotted_data()
-        
 
+    def calc_gait_parameters(self):
+        items = [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
+
+        if items:
+            dialog = gait_parameters.ParameterInputDialog(items, self.data_frame)
+            if dialog.exec_() == qtw.QDialog.Accepted:
+                print("Landmarks:", dialog.confirmed_landmarks)
+                print("Gait Parameters:", dialog.queried_gait_parameters)
+                print("Summary Statistics:", dialog.summ_stats)
+
+        else:
+            qtw.QMessageBox.warning(self, "No landmarks are available! Try loading a data file.")
+            return
+        
     #========VIDEO FUNCTIONALITY=========
     #Slide a vertical line along the graph as the video frame changes
     def video_position_changed(self, position):
