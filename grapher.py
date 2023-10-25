@@ -186,9 +186,9 @@ class DataDisplay(qtw.QWidget):
     #switch the data plotted on the graph
     def change_plotted_data(self):
         while self.plot.axes[0].lines:
-            self.plot.axes[0].lines.pop()
+            self.plot.axes[0].lines[-1].remove()
         while self.plot.axes[1].lines:
-            self.plot.axes[1].lines.pop()    
+            self.plot.axes[1].lines[-1].remove()
         
         items = self.list_widget.selectedItems()
         #grab max/min y to set plot bounds
@@ -251,8 +251,8 @@ class DataDisplay(qtw.QWidget):
         self.mouse_hold = True
         if all(event.inaxes != ax for ax in self.plot.axes): return
         if self.plot.axes[0].lines and self.plot.axes[1].lines:
-            self.plot.axes[0].lines.pop()
-            self.plot.axes[1].lines.pop()
+            self.plot.axes[0].lines[-1].remove()
+            self.plot.axes[1].lines[-1].remove()
             self.current_frame = int(event.xdata)
             self.plot.axes[0].axvline(x = self.current_frame, color = 'r', label = 'current frame')
             self.plot.axes[1].axvline(x = self.current_frame, color = 'r', label = 'current frame')
@@ -266,8 +266,8 @@ class DataDisplay(qtw.QWidget):
         if self.mouse_hold:
             if all(event.inaxes != ax for ax in self.plot.axes): return
             if self.plot.axes[0].lines and self.plot.axes[1].lines:
-                self.plot.axes[0].lines.pop()
-                self.plot.axes[1].lines.pop()
+                self.plot.axes[0].lines[-1].remove()
+                self.plot.axes[1].lines[-1].remove()
                 self.current_frame = int(event.xdata)
                 self.plot.axes[0].axvline(x = self.current_frame, color = 'r', label = 'current frame')
                 self.plot.axes[1].axvline(x = self.current_frame, color = 'r', label = 'current frame')
@@ -332,8 +332,8 @@ class DataDisplay(qtw.QWidget):
         self.current_frame = frame
 
         if self.plot.axes[0].lines and self.plot.axes[1].lines:
-            self.plot.axes[0].lines.pop()
-            self.plot.axes[1].lines.pop()
+            self.plot.axes[0].lines[-1].remove()
+            self.plot.axes[1].lines[-1].remove()
             self.plot.axes[0].axvline(x = self.current_frame, color = 'r', label = 'current frame')
             self.plot.axes[1].axvline(x = self.current_frame, color = 'r', label = 'current frame')
             self.plot.draw_idle()

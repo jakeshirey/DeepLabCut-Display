@@ -32,8 +32,7 @@ class ParameterInputDialog(QDialog):
                             "Right Front Fetlock", "Right Hind Fetlock", "Right Knee"]
 
         self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length",
-                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Limb Angle",
-                                "Hind Limb Angle", "Fore Fetlock Angle", "Hind Fetlock Angle"]
+                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle"]
 
         self.parameter_inputs = {}
         self.include_checklist = None
@@ -130,7 +129,7 @@ class ParameterInputDialog(QDialog):
             calc_frame['Head'] = self.vectorized_distance("Poll", "Nostril")
         if "Hind Limb Length" in self.queried_gait_parameters:
             calc_frame['Hind Limb Length'] = self.vectorized_distance("Croup", "Right Hind Hoof")
-        if "Hind Limb Length" in self.queried_gait_parameters:
+        if "Hind Leg Length" in self.queried_gait_parameters:
             calc_frame['Hind Leg Length'] = self.vectorized_distance("Stifle", "Right Hind Fetlock")
         if "Fore Limb Length" in self.queried_gait_parameters:
             calc_frame['Fore Limb Length'] = self.vectorized_distance("Withers", "Right Front Hoof")
