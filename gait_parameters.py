@@ -108,10 +108,10 @@ class ParameterInputDialog(QDialog):
         self.queried_gait_parameters = [item.text() for item in self.gait_parameters_checklist.selectedItems()]
 
         self.summ_stats = [item.text() for item in self.include_checklist.selectedItems()]
-
-        print(self.queried_gait_parameters)
-        print(self.confirmed_landmarks)
-        print(self.summ_stats)
+        
+        #print(self.queried_gait_parameters)
+        #print(self.confirmed_landmarks)
+        #print(self.summ_stats)
 
         self.perform_calculations()
 
@@ -148,7 +148,7 @@ class ParameterInputDialog(QDialog):
         if "Hind Limb Angle" in self.queried_gait_parameters:
             calc_frame['Hind Limb Angle'] = self.vectorized_angle("Croup", "Right Hind Hoof", "Croup", isForeHindLimbAngle=True) # pass the vertex in again with flag to create a vertical vector
         if "Fore Limb Angle" in self.queried_gait_parameters:
-            calc_frame['Fore Limb Angle'] = self.vectorized_angle()
+            calc_frame['Fore Limb Angle'] = self.vectorized_angle("Withers", "Right Front Hoof", "Withers", isForeHindLimbAngle=True)
         
 
         save_path, _ = QFileDialog.getSaveFileName(self, "Save Gait Parameters to File", '', '*.csv')
