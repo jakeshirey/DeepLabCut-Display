@@ -28,6 +28,15 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
 
+class CustomSlider(qtw.QSlider):
+    def keyPressEvent(self, event):
+        if event.key() == qtc.Qt.Key_Left:
+            self.setValue(self.value() - 1)
+        elif event.key() ==    qtc.Qt.Key_Right:
+            self.setValue(self.value() + 1)
+        else:
+            super().keyPressEvent(event)
+
 class VideoPlayer(qtw.QWidget):
     def __init__(self):
         super().__init__()
@@ -85,9 +94,11 @@ class VideoPlayer(qtw.QWidget):
         saveBtn.clicked.connect(self.save_frame_to_file)
 
         #create scrubbing slider
-        self.slider = qtw.QSlider(qtc.Qt.Horizontal)
+        self.slider = CustomSlider(qtc.Qt.Horizontal)
         self.slider.setRange(0,0)
         self.slider.sliderMoved.connect(self.set_position)
+        self.slider.valueChanged.connect(self.set_position)
+        self.slider.keyPressEvent
 
         #create frame label
         self.frameLabel = qtw.QLabel()
