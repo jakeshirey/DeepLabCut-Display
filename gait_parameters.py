@@ -109,9 +109,9 @@ class ParameterInputDialog(QDialog):
 
         self.summ_stats = [item.text() for item in self.include_checklist.selectedItems()]
 
-        print(self.queried_gait_parameters)
-        print(self.confirmed_landmarks)
-        print(self.summ_stats)
+        #print(self.queried_gait_parameters)
+        #print(self.confirmed_landmarks)
+        #print(self.summ_stats)
 
         self.perform_calculations()
 
@@ -144,17 +144,15 @@ class ParameterInputDialog(QDialog):
         if "Fore Fetlock Angle" in self.queried_gait_parameters:
             calc_frame['Fore Fetlock Angle'] = self.vectorized_angle("Right Front Fetlock", "Right Front Hoof", "Right Knee")
         #TODO
-        '''
         if "Hind Limb Angle" in self.queried_gait_parameters:
-            calc_frame['Hind Limb Angle'] = self.vectorized_angle()
-        if "Fore Fetlock Angle" in self.queried_gait_parameters:
-            calc_frame['Fore Limb Angle'] = self.vectorized_angle()
-        '''
+            calc_frame['Hind Limb Angle'] = self.vectorized_angle("Croup", "Right Hind Hoof", "Croup", isForeHindLimbAngle=True) # pass the vertex in again with flag to create a vertical vector
+        if "Fore Limb Angle" in self.queried_gait_parameters:
+            calc_frame['Fore Limb Angle'] = self.vectorized_angle("Withers", "Right Front Hoof", "Withers", isForeHindLimbAngle=True)
 
         save_path, _ = QFileDialog.getSaveFileName(self, "Save Gait Parameters to File", '', '*.csv')
         calc_frame.to_csv(save_path)
     
-    def vectorized_angle(self, vertex: str, endpoint1: str, endpoint2: str):
+def vectorized_angle(self, vertex: str, endpoint1: str, endpoint2: str, isForeHindLimbAngle=False):
         '''
         Wrapper function to neatly perform a vectorized angle operation on vertex, endpoint1, and endpoint2. Returns a numpy ndarray.
         '''
@@ -164,12 +162,18 @@ class ParameterInputDialog(QDialog):
         endpoint1y = self.confirmed_landmarks[endpoint1] + '_y'
         endpoint2x = self.confirmed_landmarks[endpoint2] + '_x'
         endpoint2y = self.confirmed_landmarks[endpoint2] + '_y'
+        if isForeHindLimbAngle:
+            ep2 = self.data[[endpoint2x, endpoint2y]].values
+            ep2[:,1] += 1
+        else:
+            ep2 = self.data[[endpoint2x, endpoint2y]].values
+
 
         return np.vectorize(angle, signature='(n),(n),(n)->()')(self.data[[vertexx, vertexy]].values,
                                                                              self.data[[endpoint1x, endpoint1y]].values,
-                                                                             self.data[[endpoint2x, endpoint2y]].values)        
+                                                                             ep2)            
 
-    def vectorized_distance(self, column1: str, column2: str):
+def vectorized_distance(self, column1: str, column2: str):
         '''
         Wrapper function to neatly perform a vectorized distance operation on column1 and column2. Returns a numpy ndarray.
         '''
