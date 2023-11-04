@@ -31,7 +31,7 @@ class ParameterInputDialog(QDialog):
                             "Left Hind Fetlock", "Left Knee", "Right Front Hoof", "Right Hind Hoof", "Right Hock",
                             "Right Front Fetlock", "Right Hind Fetlock", "Right Knee"]
 
-        self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length", "Hind Limb Angle", "Fore Limb Angle",
+        self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length",
                                 "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle"]
 
         self.parameter_inputs = {}
@@ -54,7 +54,7 @@ class ParameterInputDialog(QDialog):
             landmark_layout.addWidget(label)
 
             combobox = QComboBox()
-            combobox.addItems(["Unselected"])
+            combobox.addItems(["NOT AVAILABLE"])
             combobox.addItems(self.items)
             
             self.parameter_inputs[landmark] = combobox
@@ -140,21 +140,21 @@ class ParameterInputDialog(QDialog):
 
         #ANGLES
         if "Hind Fetlock Angle" in self.queried_gait_parameters:
-            calc_frame['Hind Fetlock Angle'] = self.vectorized_angle("Right Hind Fetlock", "Right Hind Hoof", "Right Hock") #double check the direction of angle
+            calc_frame['Hind Fetlock Angle'] = self.vectorized_angle("Right Hind Fetlock", "Right Hind Hoof", "Right Hock")
         if "Fore Fetlock Angle" in self.queried_gait_parameters:
             calc_frame['Fore Fetlock Angle'] = self.vectorized_angle("Right Front Fetlock", "Right Front Hoof", "Right Knee")
         #TODO
-        
+        '''
         if "Hind Limb Angle" in self.queried_gait_parameters:
-            calc_frame['Hind Limb Angle'] = self.vectorized_angle("Croup", "Right Hind Hoof", "Croup", isForeHindLimbAngle=True) # pass the vertex in again with flag to create a vertical vector
-        if "Fore Limb Angle" in self.queried_gait_parameters:
+            calc_frame['Hind Limb Angle'] = self.vectorized_angle()
+        if "Fore Fetlock Angle" in self.queried_gait_parameters:
             calc_frame['Fore Limb Angle'] = self.vectorized_angle()
-        
+        '''
 
         save_path, _ = QFileDialog.getSaveFileName(self, "Save Gait Parameters to File", '', '*.csv')
         calc_frame.to_csv(save_path)
     
-    def vectorized_angle(self, vertex: str, endpoint1: str, endpoint2: str, isForeHindLimbAngle=False):
+    def vectorized_angle(self, vertex: str, endpoint1: str, endpoint2: str):
         '''
         Wrapper function to neatly perform a vectorized angle operation on vertex, endpoint1, and endpoint2. Returns a numpy ndarray.
         '''
@@ -164,16 +164,10 @@ class ParameterInputDialog(QDialog):
         endpoint1y = self.confirmed_landmarks[endpoint1] + '_y'
         endpoint2x = self.confirmed_landmarks[endpoint2] + '_x'
         endpoint2y = self.confirmed_landmarks[endpoint2] + '_y'
-        if isForeHindLimbAngle:
-            ep2 = self.data[[endpoint2x, endpoint2y]].values
-            ep2[:,1] += 1
-        else:
-            ep2 = self.data[[endpoint2x, endpoint2y]].values
-
 
         return np.vectorize(angle, signature='(n),(n),(n)->()')(self.data[[vertexx, vertexy]].values,
                                                                              self.data[[endpoint1x, endpoint1y]].values,
-                                                                             ep2)        
+                                                                             self.data[[endpoint2x, endpoint2y]].values)        
 
     def vectorized_distance(self, column1: str, column2: str):
         '''
