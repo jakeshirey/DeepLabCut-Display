@@ -31,11 +31,13 @@ class ParameterInputDialog(QDialog):
                             "Left Hind Fetlock", "Left Knee", "Right Front Hoof", "Right Hind Hoof", "Right Hock",
                             "Right Front Fetlock", "Right Hind Fetlock", "Right Knee"]
 
-        self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length",
+        self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length", "Hind Limb Angle", "Fore Limb Angle",
                                 "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle"]
+        
+        self.summary_statistics = ["Minimum", "Maximum", "Average", "Standard Deviation"]
 
         self.parameter_inputs = {}
-        self.include_checklist = None
+        self.summ_stats_checklist = None
 
         self.confirmed_landmarks = {}
         self.summ_stats = []
@@ -76,24 +78,24 @@ class ParameterInputDialog(QDialog):
 
         layout.addLayout(gait_params_layout)
 
-        # Include checklist
-        include_layout = QVBoxLayout()
-        include_label = QLabel("Include Summary Statistics")
-        include_layout.addWidget(include_label)
+        # Summary Statistics checklist
+        summ_stats_layout = QVBoxLayout()
+        summ_stats_label = QLabel("Include Summary Statistics")
+        summ_stats_layout.addWidget(summ_stats_label)
 
-        include_checklist = QListWidget()
-        include_checklist.setSelectionMode(QListWidget.MultiSelection)
-        include_checklist.addItems(["Minimum", "Maximum", "Average", "Standard Deviation"])
-        self.include_checklist = include_checklist
+        summ_stats_checklist = QListWidget()
+        summ_stats_checklist.setSelectionMode(QListWidget.MultiSelection)
+        summ_stats_checklist.addItems(self.summary_statistics)
+        self.summ_stats_checklist = summ_stats_checklist
 
-        include_checklist_layout = QHBoxLayout()
-        include_checklist_layout.addStretch()
-        include_checklist_layout.addWidget(include_checklist)
-        include_checklist_layout.addStretch()
+        summ_stats_checklist_layout = QHBoxLayout()
+        summ_stats_checklist_layout.addStretch()
+        summ_stats_checklist_layout.addWidget(summ_stats_checklist)
+        summ_stats_checklist_layout.addStretch()
 
-        include_layout.addLayout(include_checklist_layout)
+        summ_stats_layout.addLayout(summ_stats_checklist_layout)
 
-        layout.addLayout(include_layout)
+        layout.addLayout(summ_stats_layout)
 
         calculate_button = QPushButton("Calculate")
         calculate_button.clicked.connect(self.calculate_button_clicked)
@@ -107,7 +109,7 @@ class ParameterInputDialog(QDialog):
 
         self.queried_gait_parameters = [item.text() for item in self.gait_parameters_checklist.selectedItems()]
 
-        self.summ_stats = [item.text() for item in self.include_checklist.selectedItems()]
+        self.summ_stats = [item.text() for item in self.summ_stats_checklist.selectedItems()]
 
         #print(self.queried_gait_parameters)
         #print(self.confirmed_landmarks)
@@ -149,40 +151,51 @@ class ParameterInputDialog(QDialog):
         if "Fore Limb Angle" in self.queried_gait_parameters:
             calc_frame['Fore Limb Angle'] = self.vectorized_angle("Withers", "Right Front Hoof", "Withers", isForeHindLimbAngle=True)
 
+        #SUMMARY STATISTICS
+        if "Average" in self.summ_stats:
+            averages = calc_frame.mean()
+
+            # Create a new DataFrame with the averages and index set to "Average"
+            average_row = pd.DataFrame(averages).T
+            average_row.index = ["Average"]
+
+            # Concatenate the new DataFrame with the original DataFrame and reindex
+            calc_frame = pd.concat([average_row, calc_frame])
+        
         save_path, _ = QFileDialog.getSaveFileName(self, "Save Gait Parameters to File", '', '*.csv')
         calc_frame.to_csv(save_path)
     
-def vectorized_angle(self, vertex: str, endpoint1: str, endpoint2: str, isForeHindLimbAngle=False):
-        '''
-        Wrapper function to neatly perform a vectorized angle operation on vertex, endpoint1, and endpoint2. Returns a numpy ndarray.
-        '''
-        vertexx = self.confirmed_landmarks[vertex] + '_x'
-        vertexy = self.confirmed_landmarks[vertex] + '_y'
-        endpoint1x = self.confirmed_landmarks[endpoint1] + '_x'
-        endpoint1y = self.confirmed_landmarks[endpoint1] + '_y'
-        endpoint2x = self.confirmed_landmarks[endpoint2] + '_x'
-        endpoint2y = self.confirmed_landmarks[endpoint2] + '_y'
-        if isForeHindLimbAngle:
-            ep2 = self.data[[endpoint2x, endpoint2y]].values
-            ep2[:,1] += 1
-        else:
-            ep2 = self.data[[endpoint2x, endpoint2y]].values
+    def vectorized_angle(self, vertex: str, endpoint1: str, endpoint2: str, isForeHindLimbAngle=False):
+            '''
+            Wrapper function to neatly perform a vectorized angle operation on vertex, endpoint1, and endpoint2. Returns a numpy ndarray.
+            '''
+            vertexx = self.confirmed_landmarks[vertex] + '_x'
+            vertexy = self.confirmed_landmarks[vertex] + '_y'
+            endpoint1x = self.confirmed_landmarks[endpoint1] + '_x'
+            endpoint1y = self.confirmed_landmarks[endpoint1] + '_y'
+            endpoint2x = self.confirmed_landmarks[endpoint2] + '_x'
+            endpoint2y = self.confirmed_landmarks[endpoint2] + '_y'
+            if isForeHindLimbAngle:
+                ep2 = self.data[[endpoint2x, endpoint2y]].values
+                ep2[:,1] += 1
+            else:
+                ep2 = self.data[[endpoint2x, endpoint2y]].values
 
 
-        return np.vectorize(angle, signature='(n),(n),(n)->()')(self.data[[vertexx, vertexy]].values,
-                                                                             self.data[[endpoint1x, endpoint1y]].values,
-                                                                             ep2)            
+            return np.vectorize(angle, signature='(n),(n),(n)->()')(self.data[[vertexx, vertexy]].values,
+                                                                                self.data[[endpoint1x, endpoint1y]].values,
+                                                                                ep2)            
 
-def vectorized_distance(self, column1: str, column2: str):
-        '''
-        Wrapper function to neatly perform a vectorized distance operation on column1 and column2. Returns a numpy ndarray.
-        '''
-        column1x = self.confirmed_landmarks[column1] + '_x'
-        column1y = self.confirmed_landmarks[column1] + '_y'
-        column2x = self.confirmed_landmarks[column2] + '_x'
-        column2y = self.confirmed_landmarks[column2] + '_y'
+    def vectorized_distance(self, column1: str, column2: str):
+            '''
+            Wrapper function to neatly perform a vectorized distance operation on column1 and column2. Returns a numpy ndarray.
+            '''
+            column1x = self.confirmed_landmarks[column1] + '_x'
+            column1y = self.confirmed_landmarks[column1] + '_y'
+            column2x = self.confirmed_landmarks[column2] + '_x'
+            column2y = self.confirmed_landmarks[column2] + '_y'
 
-        return np.vectorize(distance, signature='(n),(n)->()')(self.data[[column1x, column1y]].values, self.data[[column2x, column2y]].values)
+            return np.vectorize(distance, signature='(n),(n)->()')(self.data[[column1x, column1y]].values, self.data[[column2x, column2y]].values)
 
 #Testing script for widget
 if __name__ == "__main__":
