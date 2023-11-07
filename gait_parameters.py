@@ -37,7 +37,7 @@ class ParameterInputDialog(QDialog):
         self.summary_statistics = ["Minimum", "Maximum", "Average", "Standard Deviation"]
 
         self.parameter_inputs = {}
-        self.summ_stats_checklist = None
+        self.summ_stats_checkbox = None
 
         self.confirmed_landmarks = {}
         self.summ_stats = []
@@ -56,7 +56,7 @@ class ParameterInputDialog(QDialog):
             landmark_layout.addWidget(label)
 
             combobox = QComboBox()
-            combobox.addItems(["NOT AVAILABLE"])
+            combobox.addItems(["Unselected"])
             combobox.addItems(self.items)
             
             self.parameter_inputs[landmark] = combobox
@@ -78,22 +78,15 @@ class ParameterInputDialog(QDialog):
 
         layout.addLayout(gait_params_layout)
 
-        # Summary Statistics checklist
-        summ_stats_layout = QVBoxLayout()
-        summ_stats_label = QLabel("Include Summary Statistics")
+        # Summary Statistics checkbox
+        summ_stats_layout = QHBoxLayout()
+        summ_stats_label = QLabel("Include Summary Statistics? (Minimum, Maximum, Mean, Standard Deviation)")
         summ_stats_layout.addWidget(summ_stats_label)
 
-        summ_stats_checklist = QListWidget()
-        summ_stats_checklist.setSelectionMode(QListWidget.MultiSelection)
-        summ_stats_checklist.addItems(self.summary_statistics)
-        self.summ_stats_checklist = summ_stats_checklist
+        summ_stats_checkbox = QCheckBox()
+        self.summ_stats_checkbox = summ_stats_checkbox
 
-        summ_stats_checklist_layout = QHBoxLayout()
-        summ_stats_checklist_layout.addStretch()
-        summ_stats_checklist_layout.addWidget(summ_stats_checklist)
-        summ_stats_checklist_layout.addStretch()
-
-        summ_stats_layout.addLayout(summ_stats_checklist_layout)
+        summ_stats_layout.addWidget(summ_stats_checkbox)
 
         layout.addLayout(summ_stats_layout)
 
@@ -109,7 +102,7 @@ class ParameterInputDialog(QDialog):
 
         self.queried_gait_parameters = [item.text() for item in self.gait_parameters_checklist.selectedItems()]
 
-        self.summ_stats = [item.text() for item in self.summ_stats_checklist.selectedItems()]
+        self.summ_stats = self.summ_stats_checkbox.isChecked()
 
         #print(self.queried_gait_parameters)
         #print(self.confirmed_landmarks)
@@ -152,16 +145,16 @@ class ParameterInputDialog(QDialog):
             calc_frame['Fore Limb Angle'] = self.vectorized_angle("Withers", "Right Front Hoof", "Withers", isForeHindLimbAngle=True)
 
         #SUMMARY STATISTICS
-        if "Average" in self.summ_stats:
-            averages = calc_frame.mean()
+        if self.summ_stats:
+            # Calculate the statistics (min, max, std, mean) for all columns
+            statistics = calc_frame.agg(['min', 'max', 'std', 'mean'])
 
-            # Create a new DataFrame with the averages and index set to "Average"
-            average_row = pd.DataFrame(averages).T
-            average_row.index = ["Average"]
+            # Rename the index to the names of the statistics
+            statistics.index = ['Minimum', 'Maximum', 'Standard Deviation', 'Mean']
 
             # Concatenate the new DataFrame with the original DataFrame and reindex
-            calc_frame = pd.concat([average_row, calc_frame])
-        
+            calc_frame = pd.concat([statistics, calc_frame])
+            
         save_path, _ = QFileDialog.getSaveFileName(self, "Save Gait Parameters to File", '', '*.csv')
         calc_frame.to_csv(save_path)
     
