@@ -18,6 +18,11 @@ def distance(point1, point2):
     point2 = np.array(point2)
     return np.linalg.norm(point2 - point1)
 
+def velocity(ds: pd.Series) -> pd.Series:  
+    values = ds.to_numpy()
+    gradient = np.gradient(values)
+    return pd.Series(gradient)
+
 class ParameterInputDialog(QDialog):
     def __init__(self, items, data_frame: pd.DataFrame, parent=None):
         super().__init__(parent)
@@ -32,7 +37,7 @@ class ParameterInputDialog(QDialog):
                             "Right Front Fetlock", "Right Hind Fetlock", "Right Knee"]
 
         self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length", "Hind Limb Angle", "Fore Limb Angle",
-                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle"]
+                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle", "Speed"]
         
         self.summary_statistics = ["Minimum", "Maximum", "Average", "Standard Deviation"]
 
@@ -143,6 +148,10 @@ class ParameterInputDialog(QDialog):
             calc_frame['Hind Limb Angle'] = self.vectorized_angle("Croup", "Right Hind Hoof", "Croup", isForeHindLimbAngle=True) # pass the vertex in again with flag to create a vertical vector
         if "Fore Limb Angle" in self.queried_gait_parameters:
             calc_frame['Fore Limb Angle'] = self.vectorized_angle("Withers", "Right Front Hoof", "Withers", isForeHindLimbAngle=True)
+        
+        #SPEED
+        if "Speed" in self.queried_gait_parameters:
+            calc_frame["Speed"] = self.speed("Withers")
 
         #SUMMARY STATISTICS
         if self.summ_stats:
@@ -189,7 +198,19 @@ class ParameterInputDialog(QDialog):
             column2y = self.confirmed_landmarks[column2] + '_y'
 
             return np.vectorize(distance, signature='(n),(n)->()')(self.data[[column1x, column1y]].values, self.data[[column2x, column2y]].values)
+    
+    def speed(self, column: str):
+        '''
+        Obtain the speed (horizontal and vertical component) of a point on the body. Units are in pixels/frame.
+        '''
+        columnx = self.confirmed_landmarks[column] + '_x'
+        columny = self.confirmed_landmarks[column] + '_y'  
 
+        horizontal = np.gradient(self.data[columnx].to_numpy()) #since each frame is recorded, we do not need a delta-x step
+        vertical = np.gradient(self.data[columnx].to_numpy())
+
+        return np.vectorize(np.linalg.norm, signature='(n)->()')(np.array([horizontal, vertical]).T)
+    
 #Testing script for widget
 if __name__ == "__main__":
     import sys
