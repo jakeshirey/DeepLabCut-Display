@@ -88,6 +88,18 @@ def test_vectorized_distance():
     # Check if the computed distances match the expected distances
     assert np.allclose(df['computed_distance'], df['distance'])
 
+def test_speed():
+    df = pd.DataFrame({'landmark1_x': [1,  2, 3],
+                   'landmark1_y': [1, 2, 3],
+                   'speed': [1.4142135623, 1.4142135623, 1.4142135623]})
+    
+    horizontal = np.gradient(df['landmark1_x'].to_numpy())
+    vertical = np.gradient(df['landmark1_y'].to_numpy())
+
+    df['computed_speed'] = np.vectorize(np.linalg.norm, signature='(n)->()')(np.array([horizontal, vertical]).T)
+    print(df['computed_speed'])
+    assert np.allclose(df['computed_speed'], df['speed'])
+
 
 def test_shank_calculation(app, widget):
     calc_frame = pd.DataFrame(columns=widget.queried_gait_parameters, index=widget.data.index)
