@@ -37,7 +37,7 @@ class ParameterInputDialog(QDialog):
                             "Right Front Fetlock", "Right Hind Fetlock", "Right Knee"]
 
         self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length", "Hind Limb Angle", "Fore Limb Angle",
-                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle", "Speed"]
+                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle", "Back Angle", "Speed"]
         
         self.summary_statistics = ["Minimum", "Maximum", "Average", "Standard Deviation"]
 
@@ -143,6 +143,8 @@ class ParameterInputDialog(QDialog):
             calc_frame['Hind Fetlock Angle'] = self.vectorized_angle("Right Hind Fetlock", "Right Hind Hoof", "Right Hock")
         if "Fore Fetlock Angle" in self.queried_gait_parameters:
             calc_frame['Fore Fetlock Angle'] = self.vectorized_angle("Right Front Fetlock", "Right Front Hoof", "Right Knee")
+        if "Back Angle" in self.queried_gait_parameters:
+            calc_frame['Back Angle'] = self.vectorized_angle("Mid Back", "Croup", "Withers")
         #TODO
         if "Hind Limb Angle" in self.queried_gait_parameters:
             calc_frame['Hind Limb Angle'] = self.vectorized_angle("Croup", "Right Hind Hoof", "Croup", isForeHindLimbAngle=True) # pass the vertex in again with flag to create a vertical vector
