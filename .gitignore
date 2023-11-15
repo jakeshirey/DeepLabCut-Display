@@ -1,3 +1,4 @@
 vrt/
 *.pyc
+*.csv
 devnotes.txt
