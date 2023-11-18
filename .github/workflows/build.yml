@@ -25,26 +25,3 @@ jobs:
         with:
           name: DeepLabCut-Display
           path: dist/DeepLabCut-Display.exe
-
-      - name: create release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v1.0.1
-          release_name: v1.0.0
-          body: |
-            Release v1.0.0
-          draft: false
-          prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{steps.create_release.outputs.upload_url}}
-          asset_path: dist/DeepLabCut-Display.exe
-          asset_name: DeepLabCut-Display.exe
-          asset_content_type: application/zip
