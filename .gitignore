@@ -2,3 +2,5 @@ vrt/
 *.pyc
 *.csv
 devnotes.txt
+build/
+dist/
