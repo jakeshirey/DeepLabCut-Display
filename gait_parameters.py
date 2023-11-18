@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QDialog, QFileDialog, QLabel, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QCheckBox, QListWidget, QApplication
 import pandas as pd
 import numpy as np
+import scipy.signal
 
 def angle(vertex, point1, point2):
     vertex = np.array(vertex)
@@ -37,9 +38,7 @@ class ParameterInputDialog(QDialog):
                             "Right Front Fetlock", "Right Hind Fetlock", "Right Knee"]
 
         self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length", "Hind Limb Angle", "Fore Limb Angle",
-                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle", "Back Angle", "Speed"]
-        
-        self.summary_statistics = ["Minimum", "Maximum", "Average", "Standard Deviation"]
+                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle", "Back Angle", "Speed", "Stride Length"]
 
         self.parameter_inputs = {}
         self.summ_stats_checkbox = None
@@ -145,7 +144,6 @@ class ParameterInputDialog(QDialog):
             calc_frame['Fore Fetlock Angle'] = self.vectorized_angle("Right Front Fetlock", "Right Front Hoof", "Right Knee")
         if "Back Angle" in self.queried_gait_parameters:
             calc_frame['Back Angle'] = self.vectorized_angle("Mid Back", "Croup", "Withers")
-        #TODO
         if "Hind Limb Angle" in self.queried_gait_parameters:
             calc_frame['Hind Limb Angle'] = self.vectorized_angle("Croup", "Right Hind Hoof", "Croup", isForeHindLimbAngle=True) # pass the vertex in again with flag to create a vertical vector
         if "Fore Limb Angle" in self.queried_gait_parameters:
@@ -154,6 +152,10 @@ class ParameterInputDialog(QDialog):
         #SPEED
         if "Speed" in self.queried_gait_parameters:
             calc_frame["Speed"] = self.speed("Withers")
+        
+        #STRIDE LENGTH
+        if "Stride Length" in self.queried_gait_parameters:
+            calc_frame["Stride Length"] = self.stride_length("Right Hind Hoof")
 
         #SUMMARY STATISTICS
         if self.summ_stats:
@@ -211,7 +213,14 @@ class ParameterInputDialog(QDialog):
         horizontal = np.gradient(self.data[columnx].to_numpy()) #since each frame is recorded, we do not need a delta-x step
         vertical = np.gradient(self.data[columnx].to_numpy())
 
-        return np.vectorize(np.linalg.norm, signature='(n)->()')(np.array([horizontal, vertical]).T)
+        return np.vectorize(np.linalg.norm, signature='(n)->()')(np.array([horizontal, vertical]).T) #use the pythagorean theorem on both components
+    
+    def stride_length(self, column: str):
+        columnx = self.confirmed_landmarks[column] + '_x'
+        self.data[columnx] = scipy.signal.butter(3, 0.05)
+        result = scipy.signal.find_peaks_cwt(self.data[columnx].to_numpy(), np.arange(1,5))
+        print(result)
+        return result
     
 #Testing script for widget
 if __name__ == "__main__":
