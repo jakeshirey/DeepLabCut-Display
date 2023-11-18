@@ -34,6 +34,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    runtime_tmpdir=None,
-    console=True , icon='horse.ico'
+    icon='horse.ico'
 )
