@@ -211,7 +211,7 @@ class ParameterInputDialog(QDialog):
         columny = self.confirmed_landmarks[column] + '_y'  
 
         horizontal = np.gradient(self.data[columnx].to_numpy()) #since each frame is recorded, we do not need a delta-x step
-        vertical = np.gradient(self.data[columnx].to_numpy())
+        vertical = np.gradient(self.data[columny].to_numpy())
 
         return np.vectorize(np.linalg.norm, signature='(n)->()')(np.array([horizontal, vertical]).T) #use the pythagorean theorem on both components
     
