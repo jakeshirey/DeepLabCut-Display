@@ -84,13 +84,13 @@ class ParameterInputDialog(QDialog):
 
         # Summary Statistics checkbox
         summ_stats_layout = QHBoxLayout()
-        summ_stats_label = QLabel("Include Summary Statistics? (Minimum, Maximum, Mean, Standard Deviation)")
-        summ_stats_layout.addWidget(summ_stats_label)
-
         summ_stats_checkbox = QCheckBox()
         self.summ_stats_checkbox = summ_stats_checkbox
 
         summ_stats_layout.addWidget(summ_stats_checkbox)
+        
+        summ_stats_label = QLabel("Include Summary Statistics? (Minimum, Maximum, Mean, Standard Deviation)")
+        summ_stats_layout.addWidget(summ_stats_label)
 
         layout.addLayout(summ_stats_layout)
 
@@ -120,16 +120,16 @@ class ParameterInputDialog(QDialog):
         calc_frame = pd.DataFrame(columns=self.queried_gait_parameters, index=self.data.index)
 
         #DISTANCES
-        if "Right Shank" in self.queried_gait_parameters:
-            calc_frame['Right Shank'] = self.vectorized_distance(column1="Right Hock", column2= "Right Hind Fetlock")
-        if "Left Shank" in self.queried_gait_parameters:
-            calc_frame['Left Shank'] = self.vectorized_distance(column1="Left Hock", column2="Left Hind Fetlock")
-        if "Head" in self.queried_gait_parameters:
-            calc_frame['Head'] = self.vectorized_distance("Poll", "Nostril")
-        if "Hind Limb Length" in self.queried_gait_parameters:
-            calc_frame['Hind Limb Length'] = self.vectorized_distance("Croup", "Right Hind Hoof")
-        if "Hind Leg Length" in self.queried_gait_parameters:
-            calc_frame['Hind Leg Length'] = self.vectorized_distance("Stifle", "Right Hind Fetlock")
+        if "Right Cannon" in self.queried_gait_parameters:
+            calc_frame['Right Cannon'] = self.vectorized_distance(column1="Right Hock", column2= "Right Hind Fetlock")
+        if "Left Cannon" in self.queried_gait_parameters:
+            calc_frame['Left Cannon'] = self.vectorized_distance(column1="Left Hock", column2="Left Hind Fetlock")
+        if "Head Length" in self.queried_gait_parameters:
+            calc_frame['Head Length'] = self.vectorized_distance("Poll", "Nostril")
+        if "Right Hind Croup to Hoof Length" in self.queried_gait_parameters:
+            calc_frame['Right Hind Croup to Hoof Length'] = self.vectorized_distance("Croup", "Right Hind Hoof")
+        if "Right Hind Cannon Length" in self.queried_gait_parameters:
+            calc_frame['Right Hind Cannon Length'] = self.vectorized_distance("Stifle", "Right Hind Fetlock")
         if "Fore Limb Length" in self.queried_gait_parameters:
             calc_frame['Fore Limb Length'] = self.vectorized_distance("Withers", "Right Front Hoof")
         if "Fore Leg Length" in self.queried_gait_parameters:

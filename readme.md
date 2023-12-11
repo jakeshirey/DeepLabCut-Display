@@ -9,8 +9,11 @@ This complimentary tool was originally developed for the University of Florida D
 
 ![display example](https://user-images.githubusercontent.com/94328784/184924777-e04cf534-029f-4e1f-8d42-3d661727edef.JPG)
 
-# Download and Installation
-***Currently, DeepLabCut-Display is only supported on [Python 3.7 to Python 3.10](https://www.python.org/downloads/). Please make sure to use these versions when running Python build commands.***
+## Download Latest Release
+
+Look on the right side of this page to the 'Releases' panel. Click on the latest version and download 'DeepLabCut-Display.exe'. Note that this version is built for 64-bit Windows.
+
+## Build Code From Source
 
 Begin by downloading the codebase from this GitHub page either from the "download zip" option off the green "Code" button or by running this command:
 
@@ -46,6 +49,6 @@ OR the application can be compiled once into an executable file (.exe) using the
 
 and wait for the process to finish executing. This should create a 'dist' folder in the same directory that holds the executable file with the same name. This executable is now available to be used!
 
-# Video Guides
+## Video Guides
 Installation Tutorial: https://youtu.be/Ynq2oSQp2v0
 Usage Tutorial: https://youtu.be/U5V9ag9aJ04
