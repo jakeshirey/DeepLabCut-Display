@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QDialog, QFileDialog, QLabel, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QCheckBox, QListWidget, QApplication
 import pandas as pd
 import numpy as np
-import scipy.signal
+from scipy.signal import butter, filtfilt, find_peaks
 
 def angle(vertex, point1, point2):
     vertex = np.array(vertex)
@@ -38,7 +38,7 @@ class ParameterInputDialog(QDialog):
                             "Right Front Fetlock", "Right Hind Fetlock", "Right Knee"]
 
         self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length", "Hind Limb Angle", "Fore Limb Angle",
-                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle", "Back Angle", "Speed", "Stride Length"]
+                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle", "Back Angle", "Speed", "Stride Lengths", "Duty Factors"]
 
         self.parameter_inputs = {}
         self.summ_stats_checkbox = None
@@ -154,8 +154,14 @@ class ParameterInputDialog(QDialog):
             calc_frame["Speed"] = self.speed("Withers")
         
         #STRIDE LENGTH
-        if "Stride Length" in self.queried_gait_parameters:
-            calc_frame["Stride Length"] = self.stride_length("Right Hind Hoof")
+        if "Stride Lengths" in self.queried_gait_parameters or "Duty Factors" in self.queried_gait_parameters:
+
+            strides, stride_lengths, dutyfactor = self.stride_length_duty_factor("Right Hock")
+
+            data = {"Stride Start" : strides[0], "Stride End" : strides[1], "Stride Length" : stride_lengths, "Duty Factor" : dutyfactor}
+            stride_df = pd.DataFrame(data)
+            save_path, _ = QFileDialog.getSaveFileName(self, "Save Strides to File", '', '*.csv')
+            stride_df.to_csv(save_path)
 
         #SUMMARY STATISTICS
         if self.summ_stats:
@@ -215,12 +221,69 @@ class ParameterInputDialog(QDialog):
 
         return np.vectorize(np.linalg.norm, signature='(n)->()')(np.array([horizontal, vertical]).T) #use the pythagorean theorem on both components
     
-    def stride_length(self, column: str):
-        columnx = self.confirmed_landmarks[column] + '_x'
-        self.data[columnx] = scipy.signal.butter(3, 0.05)
-        result = scipy.signal.find_peaks_cwt(self.data[columnx].to_numpy(), np.arange(1,5))
-        print(result)
-        return result
+    def stride_length_duty_factor(self, hock: str):
+        # Design parameters
+        filter_order = 8
+        cutoff_frequency = 0.05  # Half power frequency in MATLAB
+
+        # Calculate the normalized cutoff frequency for Python
+        nyquist_frequency = 0.5  # Nyquist frequency is 0.5 in normalized frequency
+        cutoff_frequency_python = cutoff_frequency / nyquist_frequency
+
+        # Design Butterworth lowpass filter coefficients
+        b, a = butter(filter_order, cutoff_frequency_python, btype='low', analog=False)
+
+        #filter the right hock x component
+        filtered_data = filtfilt(b, a, self.data[self.confirmed_landmarks[hock] + '_x'])
+
+        #take the gradient of the filtered data
+        hockx_gradient = np.gradient(filtered_data)
+        
+        #Peaks of gradient correspond to middle of stride
+        peaks, _ = find_peaks(np.abs(hockx_gradient), prominence=1, distance=25)
+
+        #Threshold between swing and stance is 0.25 the median peak gradient value
+        threshold = 0.25 * np.median(hockx_gradient[peaks])
+        
+        footstrikes = np.where((hockx_gradient[:-1] >= threshold) & (hockx_gradient[1:] < threshold))[0]
+
+        # Find locations where values rise from below threshold to above
+        toeoffs = np.where((hockx_gradient[:-1] < threshold) & (hockx_gradient[1:] >= threshold))[0]
+
+        # Check if any crossings are found
+        if toeoffs.size > 0:
+            rise_count_threshold = 10
+            # Find locations where values rise above the threshold for the tenth time past the intersection
+            ten_above = []
+            for toeoff in toeoffs:
+                if hockx_gradient[toeoff+10] and hockx_gradient[toeoff+10] > threshold:
+                    ten_above.append(toeoff+10)
+        
+        if ten_above:
+            toeoffs = ten_above
+
+        strides = [footstrikes[:-1], footstrikes[1:]]
+        
+        #stride length as distance between start and end of stride
+        stride_lengths = strides[1] - strides[0]
+
+        #remove an extra toeoff if one exists before a strike
+        if toeoffs[0] < footstrikes[0]:
+            toeoffs = toeoffs[1:]
+        
+        #calculate duty factor for each stride based on start and end of stride, and the toeoff inbetween
+        dutyfactor = np.zeros(len(strides[0]))
+        for j in range(len(strides[0])):
+            stridestart = strides[j][0]
+            strideend = strides[j][1]
+
+            strideToeOff = toeoff[toeoff > stridestart]
+
+            # Temporal
+            timestance = toeoffs[j] - stridestart
+            dutyfactor[j] = timestance / (strideend - stridestart)
+        return strides, stride_lengths, dutyfactor
+        
     
 #Testing script for widget
 if __name__ == "__main__":
