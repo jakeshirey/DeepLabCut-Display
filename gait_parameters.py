@@ -37,8 +37,10 @@ class ParameterInputDialog(QDialog):
                             "Left Hind Fetlock", "Left Knee", "Right Front Hoof", "Right Hind Hoof", "Right Hock",
                             "Right Front Fetlock", "Right Hind Fetlock", "Right Knee"]
 
-        self.gait_parameters = ["Right Cannon", "Left Cannon", "Head", "Right Hind Croup to Hoof Length", "Right Hind Cannon Length", "Hind Limb Angle", "Fore Limb Angle",
-                                "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle", "Back Angle", "Speed", "Stride Lengths", "Duty Factors"]
+        self.gait_parameters = ["Head Length", "Neck Length", "Right Hind Cannon Length", "Right Fore Cannon Length", 
+                                "Right Hind Croup to Hoof Length", "Right Fore Withers to Hoof Length", 
+                                "Hind Limb Swing Angle", "Fore Limb Swing Angle", "Fore Fetlock Angle", "Hind Fetlock Angle", 
+                                "Back Angle", "Speed", "Stride Length", "Duty Factor"]
 
         self.parameter_inputs = {}
         self.summ_stats_checkbox = None
@@ -120,20 +122,16 @@ class ParameterInputDialog(QDialog):
         calc_frame = pd.DataFrame(columns=self.queried_gait_parameters, index=self.data.index)
 
         #DISTANCES
-        if "Right Cannon" in self.queried_gait_parameters:
-            calc_frame['Right Cannon'] = self.vectorized_distance(column1="Right Hock", column2= "Right Hind Fetlock")
-        if "Left Cannon" in self.queried_gait_parameters:
-            calc_frame['Left Cannon'] = self.vectorized_distance(column1="Left Hock", column2="Left Hind Fetlock")
+        if "Right Hind Cannon Length" in self.queried_gait_parameters:
+            calc_frame['Right Hind Cannon Length'] = self.vectorized_distance(column1="Right Hock", column2= "Right Hind Fetlock")
+        if "Right Fore Cannon Length" in self.queried_gait_parameters:
+            calc_frame['Right Fore Cannon Length'] = self.vectorized_distance("Right Knee", "Right Front Fetlock")
         if "Head Length" in self.queried_gait_parameters:
             calc_frame['Head Length'] = self.vectorized_distance("Poll", "Nostril")
         if "Right Hind Croup to Hoof Length" in self.queried_gait_parameters:
             calc_frame['Right Hind Croup to Hoof Length'] = self.vectorized_distance("Croup", "Right Hind Hoof")
-        if "Right Hind Cannon Length" in self.queried_gait_parameters:
-            calc_frame['Right Hind Cannon Length'] = self.vectorized_distance("Stifle", "Right Hind Fetlock")
-        if "Fore Limb Length" in self.queried_gait_parameters:
+        if "Right Fore Withers to Hoof Length" in self.queried_gait_parameters:
             calc_frame['Fore Limb Length'] = self.vectorized_distance("Withers", "Right Front Hoof")
-        if "Fore Leg Length" in self.queried_gait_parameters:
-            calc_frame['Fore Leg Length'] = self.vectorized_distance("Elbow", "Right Front Fetlock")
         if "Neck Length" in self.queried_gait_parameters:
             calc_frame['Neck Length'] = self.vectorized_distance("Poll", "Withers")
 
@@ -145,16 +143,16 @@ class ParameterInputDialog(QDialog):
         if "Back Angle" in self.queried_gait_parameters:
             calc_frame['Back Angle'] = self.vectorized_angle("Mid Back", "Croup", "Withers")
         if "Hind Limb Angle" in self.queried_gait_parameters:
-            calc_frame['Hind Limb Angle'] = self.vectorized_angle("Croup", "Right Hind Hoof", "Croup", isForeHindLimbAngle=True) # pass the vertex in again with flag to create a vertical vector
+            calc_frame['Hind Limb Swing Angle'] = self.vectorized_angle("Croup", "Right Hind Hoof", "Croup", isForeHindLimbAngle=True) # pass the vertex in again with flag to create a vertical vector
         if "Fore Limb Angle" in self.queried_gait_parameters:
-            calc_frame['Fore Limb Angle'] = self.vectorized_angle("Withers", "Right Front Hoof", "Withers", isForeHindLimbAngle=True)
+            calc_frame['Fore Limb Swing Angle'] = self.vectorized_angle("Withers", "Right Front Hoof", "Withers", isForeHindLimbAngle=True)
         
         #SPEED
         if "Speed" in self.queried_gait_parameters:
             calc_frame["Speed"] = self.speed("Withers")
         
         #STRIDE LENGTH
-        if "Stride Lengths" in self.queried_gait_parameters or "Duty Factors" in self.queried_gait_parameters:
+        if "Stride Length" in self.queried_gait_parameters or "Duty Factor" in self.queried_gait_parameters:
 
             strides, stride_lengths, dutyfactor = self.stride_length_duty_factor("Right Hock")
 
