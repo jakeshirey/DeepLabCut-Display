@@ -37,7 +37,7 @@ class ParameterInputDialog(QDialog):
                             "Left Hind Fetlock", "Left Knee", "Right Front Hoof", "Right Hind Hoof", "Right Hock",
                             "Right Front Fetlock", "Right Hind Fetlock", "Right Knee"]
 
-        self.gait_parameters = ["Right Shank", "Left Shank", "Head", "Hind Limb Length", "Hind Leg Length", "Hind Limb Angle", "Fore Limb Angle",
+        self.gait_parameters = ["Right Cannon", "Left Cannon", "Head", "Right Hind Croup to Hoof Length", "Right Hind Cannon Length", "Hind Limb Angle", "Fore Limb Angle",
                                 "Fore Limb Length", "Fore Leg Length", "Neck Length", "Fore Fetlock Angle", "Hind Fetlock Angle", "Back Angle", "Speed", "Stride Lengths", "Duty Factors"]
 
         self.parameter_inputs = {}
