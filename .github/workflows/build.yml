@@ -2,7 +2,7 @@ name: Build Workflow
 
 on:
   push:
-       branches: main
+    branches: main
 
 jobs:
   build-windows:
@@ -25,3 +25,23 @@ jobs:
         with:
           name: DeepLabCut-Display
           path: dist/DeepLabCut-Display.exe
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          architecture: 'arm64'
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+      - name: Run PyInstaller
+        run: |
+          python -m PyInstaller mainGUI.spec
+      - uses: actions/upload-artifact@v3
+        with:
+          name: DeepLabCut-Display-macOS
+          path: dist/DeepLabCut-Display
