@@ -1,4 +1,5 @@
 import sys, time
+import logging
 
 import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as qtg
@@ -6,6 +7,7 @@ import PyQt5.QtCore as qtc
 
 import videoplayer
 import grapher
+
 
 class MainWindow(qtw.QWidget):
     def __init__(self):
