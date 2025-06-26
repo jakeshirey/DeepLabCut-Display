@@ -5,3 +5,4 @@ devnotes.txt
 build/
 dist/
 test_data/
+app.log
