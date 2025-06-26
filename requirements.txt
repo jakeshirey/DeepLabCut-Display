@@ -9,6 +9,7 @@ future
 iniconfig
 kiwisolver
 libclang
+logging
 matplotlib
 numpy
 opencv-python

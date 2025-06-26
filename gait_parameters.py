@@ -2,6 +2,13 @@ from PyQt5.QtWidgets import QDialog, QFileDialog, QLabel, QVBoxLayout, QHBoxLayo
 import pandas as pd
 import numpy as np
 from scipy.signal import butter, filtfilt, find_peaks
+import logging
+
+logging.basicConfig(
+    filename='app.log',
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s:%(message)s'
+)
 
 def angle(vertex, point1, point2):
     vertex = np.array(vertex)
@@ -101,22 +108,24 @@ class ParameterInputDialog(QDialog):
         layout.addWidget(calculate_button)
 
     def calculate_button_clicked(self):
-        
-        for landmark, combobox in self.parameter_inputs.items():
-            selected_item = combobox.currentText()
-            self.confirmed_landmarks[landmark] = selected_item
+        try:
+            for landmark, combobox in self.parameter_inputs.items():
+                selected_item = combobox.currentText()
+                self.confirmed_landmarks[landmark] = selected_item
 
-        self.queried_gait_parameters = [item.text() for item in self.gait_parameters_checklist.selectedItems()]
+            self.queried_gait_parameters = [item.text() for item in self.gait_parameters_checklist.selectedItems()]
 
-        self.summ_stats = self.summ_stats_checkbox.isChecked()
+            self.summ_stats = self.summ_stats_checkbox.isChecked()
 
-        #print(self.queried_gait_parameters)
-        #print(self.confirmed_landmarks)
-        #print(self.summ_stats)
+            logging.info(self.queried_gait_parameters)
+            logging.info(self.confirmed_landmarks)
+            logging.info(self.summ_stats)
 
-        self.perform_calculations()
+            self.perform_calculations()
 
-        self.accept()
+            self.accept()
+        except Exception as e:
+            logging.exception("Unhandled exception occurred")
 
     def perform_calculations(self):
         calc_frame = pd.DataFrame(columns=self.queried_gait_parameters, index=self.data.index)
